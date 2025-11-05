@@ -21,6 +21,10 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<Tickly.Api.Services.TicketWorkflowService>();
 builder.Services.AddScoped<Tickly.Api.Services.AuditService>();
 builder.Services.AddScoped<Tickly.Api.Services.SLAMonitoringService>();
+builder.Services.AddScoped<Tickly.Api.Services.AutomationService>();
+
+// HTTP Client for webhooks
+builder.Services.AddHttpClient();
 
 // Background workers
 builder.Services.AddHostedService<Tickly.Api.Services.VirusScanWorker>();

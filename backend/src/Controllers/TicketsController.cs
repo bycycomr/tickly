@@ -15,12 +15,18 @@ namespace Tickly.Api.Controllers
         private readonly AppDbContext _db;
         private readonly TicketWorkflowService _workflow;
         private readonly AuditService _audit;
+        private readonly AutomationService _automation;
 
-        public TicketsController(AppDbContext db, TicketWorkflowService workflow, AuditService audit)
+        public TicketsController(
+            AppDbContext db, 
+            TicketWorkflowService workflow, 
+            AuditService audit,
+            AutomationService automation)
         {
             _db = db;
             _workflow = workflow;
             _audit = audit;
+            _automation = automation;
         }
 
         // Helper: get user id from token (sub)
@@ -129,6 +135,21 @@ namespace Tickly.Api.Controllers
 
             _db.Tickets.Add(ticket);
             await _db.SaveChangesAsync();
+
+            // Trigger automation: TicketCreated
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _automation.ProcessTicketEventAsync(ticket.Id, AutomationTrigger.TicketCreated);
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail the request
+                    Console.WriteLine($"Automation error: {ex.Message}");
+                }
+            });
+
             return CreatedAtAction(nameof(Get), new { id = ticket.Id }, ticket);
         }
 
@@ -158,6 +179,20 @@ namespace Tickly.Api.Controllers
             t.EstimatedResolutionAt = input.EstimatedResolutionAt;
 
             await _db.SaveChangesAsync();
+
+            // Trigger automation: TicketUpdated
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await _automation.ProcessTicketEventAsync(t.Id, AutomationTrigger.TicketUpdated);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Automation error: {ex.Message}");
+                }
+            });
+
             return NoContent();
         }
 
@@ -200,6 +235,20 @@ namespace Tickly.Api.Controllers
                     null,
                     new { status = req.Status.ToString() }
                 );
+
+                // Trigger automation: StatusChanged
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _automation.ProcessTicketEventAsync(id, AutomationTrigger.StatusChanged);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Automation error: {ex.Message}");
+                    }
+                });
+
                 return Ok(ticketEvent);
             }
             catch (InvalidOperationException ex)
@@ -244,6 +293,20 @@ namespace Tickly.Api.Controllers
             try
             {
                 var ticketEvent = await _workflow.AddCommentAsync(id, req.Text, req.IsInternal, userId);
+
+                // Trigger automation: CommentAdded
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _automation.ProcessTicketEventAsync(id, AutomationTrigger.CommentAdded);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Automation error: {ex.Message}");
+                    }
+                });
+
                 return Ok(ticketEvent);
             }
             catch (InvalidOperationException ex)
