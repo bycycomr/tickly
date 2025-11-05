@@ -1,0 +1,441 @@
+openapi: 3.0.3
+info:
+  title: Tickly Ticket Management API
+  version: '1.0.0'
+  description: API spec (MVP) for Ticket Management System — tenant-aware, RBAC enforced via JWT claims.
+servers:
+  - url: http://localhost:5000
+    description: Local dev
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+    AuthLogin:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    AuthLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        refresh_token_set_cookie:
+          type: boolean
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+        dept_id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+    DeptDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+    TicketCreateRequest:
+      type: object
+      required: [title, tenant_id, department_id]
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        department_id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [Low, Medium, High, Critical]
+    TicketResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        tenant_id:
+          type: string
+        department_id:
+          type: integer
+        creatorId:
+          type: string
+          description: User id who created the ticket
+          readOnly: true
+        assignee_id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        priority:
+          type: string
+        eta:
+          type: string
+        created_at:
+          type: string
+        updated_at:
+          type: string
+    TicketEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+        ticket_id:
+          type: integer
+        type:
+          type: string
+        actor_id:
+          type: string
+        payload_json:
+          type: object
+        ts:
+          type: string
+paths:
+  /api/auth/login:
+    post:
+      summary: Login (returns JWT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLogin'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthLoginResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/auth/refresh:
+    post:
+      summary: Refresh access token (refresh token in httpOnly cookie)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+  /api/admin/departments:
+    get:
+      summary: List departments (tenant)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeptDto'
+    post:
+      summary: Create department
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      responses:
+        '200':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeptDto'
+  /api/users:
+    post:
+      summary: Invite or register user (tenant policy)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                name:
+                  type: string
+                dept_id:
+                  type: integer
+      responses:
+        '200':
+          description: user created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+    get:
+      summary: List users (tenant admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        '200':
+          description: users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+  /api/tickets:
+    get:
+      summary: List tickets (scope depends on JWT roles/claims)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: tickets list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TicketResponse'
+    post:
+      summary: Create ticket (web or inbound)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+  /api/tickets/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: integer
+    get:
+      summary: Get ticket by id (scoped)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: ticket
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '403':
+          description: forbidden
+    put:
+      summary: Update ticket (fields allowed depend on role)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+      responses:
+        '204':
+          description: updated
+  /api/tickets/{id}/comment:
+    post:
+      summary: Add comment (public or internal)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                internal:
+                  type: boolean
+      responses:
+        '201':
+          description: event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketEvent'
+  /api/tickets/{id}/assign:
+    post:
+      summary: Assign ticket to user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: string
+      responses:
+        '200':
+          description: assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketEvent'
+  /api/tickets/{id}/transition:
+    post:
+      summary: Transition ticket status
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [to_status]
+              properties:
+                to_status:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: transitioned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketEvent'
+  /api/tickets/{id}/attachments:
+    post:
+      summary: Upload attachment (multipart)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+  /api/automation/rules:
+    get:
+      summary: List automation rules
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: rules
+    post:
+      summary: Create rule
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: created
+  /api/audit:
+    get:
+      summary: Query audit logs (system/superadmin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
+      responses:
+        '200':
+          description: audit entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    actor_id:
+                      type: string
+                    action:
+                      type: string
+                    ts:
+                      type: string

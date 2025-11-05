@@ -1,0 +1,113 @@
+:root{
+	--bg: #f6f8fa;
+	--card: #ffffff;
+	--muted: #6b7280;
+	--accent: #2563eb;
+	--accent-600: #1e40af;
+	--border: #e6e9ee;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+	margin:0;
+	font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+	background:var(--bg);
+	color:#0f172a;
+}
+
+.app-container{
+	max-width:980px;
+	margin:24px auto;
+	padding:20px;
+}
+
+.app-header{
+	display:flex;
+    align-items:center;
+    gap:16px;
+    padding:10px 0;
+    border-bottom:1px solid transparent;
+}
+
+.app-header .brand{
+    display:flex;align-items:center;gap:12px;font-weight:700;font-size:20px;color:var(--accent-600)
+}
+.app-header .brand .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#2dd4bf,#2563eb);display:inline-block}
+.nav-links{display:flex;align-items:center;gap:8px}
+.nav-links a{padding:6px 10px;border-radius:8px}
+.nav-links a:hover{background:rgba(37,99,235,0.06)}
+
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.user-badge{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:999px;background:#f3f4f6;border:1px solid var(--border)}
+.user-badge .avatar{width:28px;height:28px;border-radius:50%;background:#c7d2fe;display:inline-block}
+
+.nav-links a{
+	color:var(--accent);
+	text-decoration:none;
+	font-weight:600;
+}
+
+.card{
+	background:var(--card);
+	border:1px solid var(--border);
+	border-radius:8px;
+	padding:16px;
+	box-shadow:0 6px 18px rgba(15,23,42,0.05);
+}
+
+.page-main{margin-top:18px}
+
+/* small helpers */
+.row{display:flex;gap:12px;align-items:center}
+.stack{display:flex;flex-direction:column;gap:8px}
+
+
+/* tables */
+.table{width:100%;border-collapse:collapse;border-radius:6px;overflow:hidden}
+.table th, .table td{padding:12px 10px;border-bottom:1px solid var(--border);text-align:left}
+.table th{color:var(--muted);font-size:13px;background:#fbfdff}
+.table tbody tr:nth-child(even){background:#fbfbfd}
+.table tbody tr:hover{background:#fffef6}
+
+/* forms */
+input[type="text"], input[type="password"], textarea, select{
+	width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:#fbfdff;font-size:14px;outline:none;transition:box-shadow .15s, border-color .15s
+}
+input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus{border-color:var(--accent);box-shadow:0 4px 14px rgba(37,99,235,0.08)}
+label{display:block;margin-bottom:6px;color:var(--muted);font-size:13px}
+
+.btn{display:inline-block;padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:600}
+.btn-primary{background:var(--accent);color:#fff;border:1px solid rgba(37,99,235,0.12);box-shadow:0 6px 18px rgba(37,99,235,0.06)}
+.btn-primary:hover{background:var(--accent-600)}
+.btn-ghost{background:transparent;border:1px solid var(--border);padding:6px 10px}
+.btn:disabled{opacity:0.6;cursor:not-allowed}
+
+.grid{display:flex;gap:12px;flex-wrap:wrap}
+
+@media (max-width:720px){
+	.app-container{padding:12px;margin:12px}
+	.nav-links{display:none}
+	.grid{flex-direction:column}
+}
+
+/* mobile nav overlay */
+.mobile-nav{position:fixed;inset:0;background:rgba(7,11,20,0.45);display:flex;align-items:flex-start;justify-content:center;padding-top:64px;z-index:120}
+.mobile-nav-inner{background:var(--card);width:90%;max-width:360px;border-radius:12px;padding:16px;box-shadow:0 10px 40px rgba(2,6,23,0.4)}
+
+/* admin tweaks */
+.dept-card { padding: 12px }
+.table-wrap{overflow:auto}
+
+/* dark theme */
+:root{--bg: #f6f8fa;--card:#ffffff;--muted:#6b7280;--accent:#2563eb;--accent-600:#1e40af;--border:#e6e9ee}
+:root.dark{--bg:#0b1220;--card:#071023;--muted:#9aa4b2;--accent:#60a5fa;--accent-600:#3b82f6;--border:#122033}
+html.dark body{background:var(--bg);color:#e6eef8}
+html.dark .card{background:var(--card);border-color:var(--border)}
+html.dark .nav-links a{color:var(--accent)}
+html.dark .user-badge{background:#071425}
+html.dark .table th, html.dark .table td{border-bottom:1px solid rgba(255,255,255,0.04)}
+
+
+.muted{color:var(--muted)}
+

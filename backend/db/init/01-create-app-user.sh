@@ -1,0 +1,37 @@
+#!/bin/bash
+set -euo pipefail
+
+APP_DB_USER=${APP_DB_USER:-tickly_app}
+APP_DB_PASSWORD=${APP_DB_PASSWORD:-tickly_app}
+APP_DB_SCHEMA=${APP_DB_SCHEMA:-tickly_app}
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+DO
+$$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '${APP_DB_USER}') THEN
+        EXECUTE format('CREATE ROLE %I WITH LOGIN PASSWORD %L;', '${APP_DB_USER}', '${APP_DB_PASSWORD}');
+    END IF;
+END
+$$;
+
+DO
+$$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_namespace WHERE nspname = '${APP_DB_SCHEMA}') THEN
+        EXECUTE format('CREATE SCHEMA %I AUTHORIZATION %I;', '${APP_DB_SCHEMA}', '${APP_DB_USER}');
+    END IF;
+END
+$$;
+
+GRANT ALL PRIVILEGES ON DATABASE ${POSTGRES_DB} TO ${APP_DB_USER};
+ALTER ROLE ${APP_DB_USER} SET search_path TO ${APP_DB_SCHEMA}, public;
+ALTER DATABASE ${POSTGRES_DB} SET search_path TO ${APP_DB_SCHEMA}, public;
+EOSQL
+
+# Ensure permissions on schema (in case schema existed already)
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+GRANT ALL ON SCHEMA ${APP_DB_SCHEMA} TO ${APP_DB_USER};
+GRANT ALL ON ALL TABLES IN SCHEMA ${APP_DB_SCHEMA} TO ${APP_DB_USER};
+GRANT ALL ON ALL SEQUENCES IN SCHEMA ${APP_DB_SCHEMA} TO ${APP_DB_USER};
+EOSQL
