@@ -406,4 +406,27 @@ namespace Tickly.Api.Controllers
         public string? EscalationPolicyJson { get; set; }
         public bool? IsActive { get; set; }
     }
+
+    public class CreateAutomationRuleDto
+    {
+        public Guid TenantId { get; set; }
+        public string Name { get; set; } = null!;
+        public string? Description { get; set; }
+        public AutomationTrigger Trigger { get; set; }
+        public string? ConditionJson { get; set; }
+        public string? ActionJson { get; set; }
+        public int Priority { get; set; } = 100;
+        public bool Enabled { get; set; } = true;
+    }
+
+    public class UpdateAutomationRuleDto
+    {
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public AutomationTrigger? Trigger { get; set; }
+        public string? ConditionJson { get; set; }
+        public string? ActionJson { get; set; }
+        public int? Priority { get; set; }
+        public bool? Enabled { get; set; }
+    }
 }
