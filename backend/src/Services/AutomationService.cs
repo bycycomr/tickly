@@ -40,7 +40,7 @@ public class AutomationService
             .Where(r => 
                 r.TenantId == ticket.TenantId &&
                 r.Trigger == trigger &&
-                r.IsActive)
+                r.Enabled)
             .OrderBy(r => r.Priority)
             .ToListAsync();
 
