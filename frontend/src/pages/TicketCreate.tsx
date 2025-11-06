@@ -76,28 +76,40 @@ export default function TicketCreate() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden py-8">
+      {/* Animated blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link
             to="/tickets"
-            className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900"
+            className="group inline-flex items-center px-4 py-2 text-sm font-medium text-purple-700 bg-white/80 backdrop-blur-xl rounded-full border-2 border-white/50 hover:bg-white hover:shadow-lg hover:scale-105 transition-all duration-300"
           >
-            <ArrowLeft size={16} className="mr-1" />
+            <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform duration-300" />
             Geri Dön
           </Link>
         </div>
 
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-white/50 p-6 sm:p-8 animate-slide-up">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Yeni Talep Oluştur</h1>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="p-3 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-xl hover:scale-110 hover:rotate-6 transition-all duration-300">
+                <Send size={28} className="text-white" />
+              </div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Yeni Talep Oluştur</h1>
+            </div>
             <p className="text-sm text-gray-600 mt-1">
               Destek talebinizi detaylı bir şekilde açıklayın
             </p>
@@ -235,7 +247,7 @@ export default function TicketCreate() {
               <Link to="/tickets" className="btn btn-ghost">
                 İptal
               </Link>
-              <button type="submit" className="btn btn-primary" disabled={saving}>
+              <button type="submit" className="btn btn-primary bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300" disabled={saving}>
                 {saving ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

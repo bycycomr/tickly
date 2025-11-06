@@ -48,42 +48,50 @@ export default function ArticleDetail() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        </div>
       </div>
     );
   }
 
   if (!article) {
     return (
-      <div className="card text-center py-12">
-        <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg mb-4">Makale bulunamadı</p>
-        <Link to="/kb" className="text-primary-600 hover:text-primary-800">
-          ← Bilgi Bankasına Dön
-        </Link>
+      <div className="space-y-6">
+        <div className="card text-center py-12">
+          <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-700 text-lg mb-4">Makale bulunamadı</p>
+          <Link to="/kb" className="inline-flex items-center text-primary-600 hover:text-primary-700 font-medium">
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Bilgi Bankasına Dön
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Back button */}
-      <Link to="/kb" className="inline-flex items-center text-sm text-primary-600 hover:text-primary-800">
+      <Link 
+        to="/kb" 
+        className="inline-flex items-center text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+      >
         <ArrowLeft className="w-4 h-4 mr-1" />
         Bilgi Bankasına Dön
       </Link>
 
       {/* Article Header */}
       <div className="card">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">{article.title}</h1>
+            <h1 className="text-4xl font-bold text-gray-900 mb-6 leading-tight">{article.title}</h1>
             
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               {article.publishedAt && (
-                <span className="flex items-center">
-                  <Calendar className="w-4 h-4 mr-1" />
+                <span className="flex items-center bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                  <Calendar className="w-4 h-4 mr-2 text-primary-600" />
                   {new Date(article.publishedAt).toLocaleDateString('tr-TR', {
                     year: 'numeric',
                     month: 'long',
@@ -93,21 +101,21 @@ export default function ArticleDetail() {
               )}
               
               {article.departmentName && (
-                <span className="flex items-center">
-                  <Building2 className="w-4 h-4 mr-1" />
+                <span className="flex items-center bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                  <Building2 className="w-4 h-4 mr-2 text-primary-600" />
                   {article.departmentName}
                 </span>
               )}
               
               {article.categoryName && (
-                <span className="flex items-center">
-                  <FolderTree className="w-4 h-4 mr-1" />
+                <span className="flex items-center bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                  <FolderTree className="w-4 h-4 mr-2 text-primary-600" />
                   {article.categoryName}
                 </span>
               )}
               
-              <span className="flex items-center">
-                <Eye className="w-4 h-4 mr-1" />
+              <span className="flex items-center bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-200">
+                <Eye className="w-4 h-4 mr-2 text-primary-600" />
                 {article.viewCount} görüntülenme
               </span>
             </div>
@@ -120,9 +128,9 @@ export default function ArticleDetail() {
             {article.tags.split(',').map((tag, idx) => (
               <span
                 key={idx}
-                className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700"
+                className="inline-flex items-center px-4 py-2 rounded-xl text-sm bg-gray-100 text-gray-700 border border-gray-200"
               >
-                <Tag className="w-3 h-3 mr-1" />
+                <Tag className="w-3 h-3 mr-2" />
                 {tag.trim()}
               </span>
             ))}
@@ -131,32 +139,50 @@ export default function ArticleDetail() {
 
         {/* Summary */}
         {article.summary && (
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-            <p className="text-sm text-blue-900 font-medium">{article.summary}</p>
+          <div className="bg-primary-50 border-l-4 border-primary-600 rounded-r-xl p-5 mb-8">
+            <p className="text-gray-800 font-medium leading-relaxed">{article.summary}</p>
           </div>
         )}
 
         {/* Content */}
         <div
-          className="prose prose-blue max-w-none"
-          dangerouslySetInnerHTML={{ __html: article.content.replace(/\n/g, '<br/>') }}
+          className="prose prose-lg max-w-none text-gray-700 leading-relaxed
+            prose-headings:text-gray-900 prose-headings:font-bold
+            prose-p:text-gray-700 prose-p:leading-relaxed
+            prose-a:text-primary-600 prose-a:no-underline hover:prose-a:text-primary-700
+            prose-strong:text-gray-900 prose-strong:font-semibold
+            prose-ul:text-gray-700 prose-ol:text-gray-700
+            prose-li:marker:text-primary-600
+            prose-code:text-primary-600 prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded
+            prose-pre:bg-gray-100 prose-pre:border prose-pre:border-gray-200
+            prose-blockquote:border-l-primary-600 prose-blockquote:text-gray-700"
+          style={{
+            fontSize: '1.05rem',
+            lineHeight: '1.8'
+          }}
+          dangerouslySetInnerHTML={{ 
+            __html: article.content
+              .replace(/\n/g, '<br/>')
+              .replace(/<br\/>/g, '<br/><br/>') 
+          }}
         />
 
         {/* Helpful Button */}
-        <div className="mt-8 pt-6 border-t border-gray-200">
+        <div className="mt-10 pt-8 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Bu makale yardımcı oldu mu?</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-base font-semibold text-gray-900 mb-2">Bu makale yardımcı oldu mu?</p>
+              <p className="text-sm text-gray-600 flex items-center">
+                <ThumbsUp className="w-4 h-4 mr-1.5 text-primary-600" />
                 {article.helpfulCount} kişi bu makaleyi faydalı buldu
               </p>
             </div>
             <button
               onClick={handleMarkHelpful}
               disabled={marking}
-              className="btn btn-primary flex items-center"
+              className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
-              <ThumbsUp className="w-4 h-4 mr-2" />
+              <ThumbsUp className="w-5 h-5 mr-2" />
               {marking ? 'İşleniyor...' : 'Evet, Yardımcı Oldu'}
             </button>
           </div>
@@ -165,8 +191,8 @@ export default function ArticleDetail() {
 
       {/* Related Articles - Placeholder */}
       <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">İlgili Makaleler</h2>
-        <p className="text-sm text-gray-500">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">İlgili Makaleler</h2>
+        <p className="text-gray-600">
           Yakında ilgili makaleler burada görünecek.
         </p>
       </div>

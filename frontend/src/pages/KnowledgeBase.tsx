@@ -74,10 +74,14 @@ export default function KnowledgeBase() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <BookOpen className="w-8 h-8 text-primary-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Bilgi Bankası</h1>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Bilgi Bankası</h1>
+            <p className="text-sm text-gray-600 mt-1">Yararlı makaleler ve rehberler</p>
+          </div>
         </div>
       </div>
 
@@ -147,13 +151,16 @@ export default function KnowledgeBase() {
               className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
             />
             <label htmlFor="featured" className="ml-2 text-sm text-gray-700 flex items-center">
-              <Star className="w-4 h-4 text-yellow-500 mr-1" />
+              <Star className="w-4 h-4 text-yellow-500 mr-1 fill-yellow-500" />
               Sadece Öne Çıkanlar
             </label>
           </div>
 
           {hasFilters && (
-            <button onClick={clearFilters} className="text-sm text-primary-600 hover:text-primary-800">
+            <button 
+              onClick={clearFilters} 
+              className="text-sm text-primary-600 hover:text-primary-800 font-medium transition-colors"
+            >
               Filtreleri Temizle
             </button>
           )}
@@ -178,29 +185,33 @@ export default function KnowledgeBase() {
             <Link
               key={article.id}
               to={`/kb/${article.slug}`}
-              className="card hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+              className="card hover:shadow-xl transition-all duration-300 cursor-pointer group"
             >
               {article.isFeatured && (
-                <div className="flex items-center mb-2">
-                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                  <span className="text-xs text-yellow-700 ml-1 font-medium">Öne Çıkan</span>
+                <div className="flex items-center mb-3">
+                  <div className="flex items-center px-3 py-1 bg-yellow-100 rounded-full">
+                    <Star className="w-4 h-4 text-yellow-600 fill-yellow-600" />
+                    <span className="text-xs text-yellow-800 ml-1.5 font-medium">Öne Çıkan</span>
+                  </div>
                 </div>
               )}
 
-              <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+              <h3 className="text-lg font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-primary-600 transition-colors">
                 {article.title}
               </h3>
 
               {article.summary && (
-                <p className="text-sm text-gray-600 mb-4 line-clamp-3">{article.summary}</p>
+                <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+                  {article.summary}
+                </p>
               )}
 
               {article.tags && (
-                <div className="flex flex-wrap gap-1 mb-3">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {article.tags.split(',').slice(0, 3).map((tag, idx) => (
                     <span
                       key={idx}
-                      className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-gray-100 text-gray-700"
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs bg-gray-100 text-gray-700 border border-gray-200"
                     >
                       <Tag className="w-3 h-3 mr-1" />
                       {tag.trim()}
@@ -209,19 +220,21 @@ export default function KnowledgeBase() {
                 </div>
               )}
 
-              <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-200">
-                <div className="flex items-center space-x-3">
+              <div className="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-200">
+                <div className="flex items-center space-x-4">
                   <span className="flex items-center">
-                    <Eye className="w-3 h-3 mr-1" />
+                    <Eye className="w-4 h-4 mr-1.5" />
                     {article.viewCount}
                   </span>
                   <span className="flex items-center">
-                    <ThumbsUp className="w-3 h-3 mr-1" />
+                    <ThumbsUp className="w-4 h-4 mr-1.5" />
                     {article.helpfulCount}
                   </span>
                 </div>
                 {article.publishedAt && (
-                  <span>{new Date(article.publishedAt).toLocaleDateString('tr-TR')}</span>
+                  <span>
+                    {new Date(article.publishedAt).toLocaleDateString('tr-TR')}
+                  </span>
                 )}
               </div>
             </Link>

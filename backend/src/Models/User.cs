@@ -28,6 +28,12 @@ namespace Tickly.Api.Models
         public AuthProvider AuthProvider { get; set; } = AuthProvider.Local;
         public UserStatus Status { get; set; } = UserStatus.Active;
         public int? DepartmentId { get; set; }
+        
+        // Organizational Department - For informational purposes only (e.g., HR, R&D, Finance)
+        // This is separate from ticket handling departments
+        public string? OrganizationalDepartment { get; set; }
+        public string? JobTitle { get; set; }
+        
         public DateTime? LastLoginAt { get; set; }
         public string? MetadataJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

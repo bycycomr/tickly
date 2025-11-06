@@ -213,6 +213,32 @@ using (var scope2 = app.Services.CreateScope())
 			db.SaveChanges();
 			Console.WriteLine($"Seeded SuperAdmin user '{adminName}' (id={user.Id})");
 		}
+		
+		// Seed standard departments
+		var standardDepartments = new[] 
+		{
+			new { Name = "İnsan Kaynakları", Description = "İnsan Kaynakları ve Personel Yönetimi" },
+			new { Name = "Bilgi İşlem", Description = "IT ve Yazılım Destek" },
+			new { Name = "ERP", Description = "Kurumsal Kaynak Planlama Sistemleri" }
+		};
+		
+		foreach (var dept in standardDepartments)
+		{
+			if (!db.Departments.Any(d => d.Name == dept.Name))
+			{
+				db.Departments.Add(new Tickly.Api.Models.Department 
+				{ 
+					Name = dept.Name, 
+					Description = dept.Description 
+				});
+			}
+		}
+		
+		if (db.ChangeTracker.HasChanges())
+		{
+			db.SaveChanges();
+			Console.WriteLine("Seeded standard departments: İnsan Kaynakları, Bilgi İşlem, ERP");
+		}
 	}
 	catch (Exception ex)
 	{

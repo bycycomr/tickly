@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import { Building2, Plus, Users, UserPlus, AlertCircle, Trash2, Clock, FolderTree, Zap, BookOpen } from 'lucide-react';
+import { Building2, Plus, Users, UserPlus, AlertCircle, Trash2, Clock, FolderTree, Zap, BookOpen, Edit, Save, Search } from 'lucide-react';
 import type { Department, SLAPlan, Category, AutomationRule, Article, ArticleStatus, CreateArticleDto } from '../lib/types';
 
 type Member = {
@@ -18,10 +18,20 @@ export default function Admin() {
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDesc, setNewDesc] = useState('');
+  const [editingDept, setEditingDept] = useState<Department | null>(null);
   const [selectedDept, setSelectedDept] = useState<number | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [assignUserId, setAssignUserId] = useState('');
   const [assignRole, setAssignRole] = useState('DepartmentManager');
+  
+  // Current user info for authorization
+  const currentUserStr = localStorage.getItem('user');
+  const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+  const isHRManager = currentUser?.departmentRoles?.some(
+    (dr: any) => dr.role === 'DepartmentManager' && departments.find(d => d.id === dr.departmentId)?.name === 'İnsan Kaynakları'
+  );
+  const isSuperAdmin = currentUser?.roles?.includes('SuperAdmin');
+  const canDeleteUsers = isSuperAdmin || isHRManager;
   
   // User creation states
   const [newUsername, setNewUsername] = useState('');
@@ -29,9 +39,25 @@ export default function Admin() {
   const [newPassword, setNewPassword] = useState('');
   const [newDisplayName, setNewDisplayName] = useState('');
   const [newJobTitle, setNewJobTitle] = useState('');
+  const [newOrgDepartment, setNewOrgDepartment] = useState('');
   const [newDepartmentId, setNewDepartmentId] = useState<number | ''>('');
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  
+  // User editing states
+  const [editingUser, setEditingUser] = useState<any | null>(null);
+  const [editUsername, setEditUsername] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editDisplayName, setEditDisplayName] = useState('');
+  const [editJobTitle, setEditJobTitle] = useState('');
+  const [editOrgDepartment, setEditOrgDepartment] = useState('');
+  const [editDepartmentId, setEditDepartmentId] = useState<number | ''>('');
+  
+  // User filtering states
+  const [filterSearch, setFilterSearch] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState<number | ''>('');
+  const [filterRole, setFilterRole] = useState('');
+  const [filterStatus, setFilterStatus] = useState<number | ''>('');
   
   // SLA Plan states
   const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([]);
@@ -115,21 +141,47 @@ export default function Admin() {
     }
 
     try {
-      const dept = await api.createDepartment({
-        name: newName.trim(),
-        description: newDesc.trim() || undefined,
-      });
-      setDepartments((prev) => [...prev, dept]);
+      if (editingDept) {
+        // Update existing department
+        const updated = await api.updateDepartment(editingDept.id, {
+          name: newName.trim(),
+          description: newDesc.trim() || undefined,
+        });
+        setDepartments((prev) => prev.map(d => d.id === editingDept.id ? updated : d));
+        toast.success('Departman başarıyla güncellendi');
+        setSuccess('Departman başarıyla güncellendi');
+        setEditingDept(null);
+      } else {
+        // Create new department
+        const dept = await api.createDepartment({
+          name: newName.trim(),
+          description: newDesc.trim() || undefined,
+        });
+        setDepartments((prev) => [...prev, dept]);
+        toast.success('Departman başarıyla oluşturuldu');
+        setSuccess('Departman basariyla olusturuldu');
+      }
+      
       setNewName('');
       setNewDesc('');
-      toast.success('Departman başarıyla oluşturuldu');
-      setSuccess('Departman basariyla olusturuldu');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.error || 'Departman oluşturulamadı';
+      const errorMsg = err?.response?.data?.error || (editingDept ? 'Departman güncellenemedi' : 'Departman oluşturulamadı');
       setError(errorMsg);
       toast.error(errorMsg);
     }
+  }
+
+  function startEditDept(dept: Department) {
+    setEditingDept(dept);
+    setNewName(dept.name);
+    setNewDesc(dept.description || '');
+  }
+
+  function cancelEditDept() {
+    setEditingDept(null);
+    setNewName('');
+    setNewDesc('');
   }
 
   async function deleteDept(deptId: number) {
@@ -212,7 +264,18 @@ export default function Admin() {
   }
 
   async function handleDeleteUser(userId: string) {
-    if (!confirm('Bu kullanıcıyı arşivlemek istediğinizden emin misiniz?')) {
+    const user = users.find(u => u.id === userId);
+    const userName = user?.displayName || user?.username || 'Bu kullanıcı';
+    
+    // SuperAdmin kontrolü
+    const isSuperAdmin = user?.roles?.includes('SuperAdmin');
+    if (isSuperAdmin) {
+      toast.error('SuperAdmin kullanıcıları silinemez!');
+      setError('SuperAdmin kullanıcıları silinemez!');
+      return;
+    }
+    
+    if (!confirm(`⚠️ DİKKAT: ${userName} kullanıcısını kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem geri alınamaz ve kullanıcının tüm verileri silinecektir!`)) {
       return;
     }
 
@@ -221,12 +284,60 @@ export default function Admin() {
 
     try {
       await api.deleteUser(userId);
-      toast.success('Kullanıcı başarıyla arşivlendi');
-      setSuccess('Kullanıcı başarıyla arşivlendi');
+      toast.success('Kullanıcı kalıcı olarak silindi');
+      setSuccess('Kullanıcı kalıcı olarak silindi');
       loadUsers();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      const errorMsg = err?.response?.data?.error || 'Kullanıcı arşivlenemedi';
+      const errorMsg = err?.response?.data?.error || 'Kullanıcı silinemedi';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  function startEditUser(user: any) {
+    setEditingUser(user);
+    setEditUsername(user.username);
+    setEditEmail(user.email || '');
+    setEditDisplayName(user.displayName || '');
+    setEditJobTitle(user.jobTitle || '');
+    setEditOrgDepartment(user.organizationalDepartment || '');
+    setEditDepartmentId(user.departmentId || '');
+  }
+
+  function cancelEditUser() {
+    setEditingUser(null);
+    setEditUsername('');
+    setEditEmail('');
+    setEditDisplayName('');
+    setEditJobTitle('');
+    setEditOrgDepartment('');
+    setEditDepartmentId('');
+  }
+
+  async function updateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!editingUser) return;
+
+    try {
+      await api.updateUser(editingUser.id, {
+        displayName: editDisplayName.trim() || undefined,
+        email: editEmail.trim() || undefined,
+        jobTitle: editJobTitle.trim() || undefined,
+        organizationalDepartment: editOrgDepartment.trim() || undefined,
+        departmentId: editDepartmentId || undefined,
+      });
+      
+      toast.success('Kullanıcı başarıyla güncellendi');
+      setSuccess('Kullanıcı başarıyla güncellendi');
+      cancelEditUser();
+      loadUsers();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Kullanıcı güncellenemedi';
       setError(errorMsg);
       toast.error(errorMsg);
     }
@@ -247,7 +358,9 @@ export default function Admin() {
         username: newUsername.trim(),
         email: newEmail.trim(),
         password: newPassword,
-        displayName: newDisplayName.trim() || newUsername.trim()
+        displayName: newDisplayName.trim() || newUsername.trim(),
+        organizationalDepartment: newOrgDepartment.trim() || undefined,
+        jobTitle: newJobTitle.trim() || undefined
       });
       
       // Eğer departman seçildiyse, kullanıcıyı departmana ata
@@ -269,6 +382,7 @@ export default function Admin() {
       setNewPassword('');
       setNewDisplayName('');
       setNewJobTitle('');
+      setNewOrgDepartment('');
       setNewDepartmentId('');
       loadUsers();
       setTimeout(() => setSuccess(''), 5000);
@@ -580,86 +694,94 @@ export default function Admin() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Building2 className="w-8 h-8 text-primary-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden py-8">
+      {/* Animated blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative space-y-6 max-w-7xl mx-auto px-4">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-white/50 p-6 animate-slide-up">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-xl hover:scale-110 hover:rotate-6 transition-all duration-300">
+              <Building2 className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Admin Panel</h1>
+          </div>
         </div>
-      </div>
 
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab('departments')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'departments'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Building2 className="w-5 h-5 inline mr-2" />
-            Departmanlar
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'users'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <UserPlus className="w-5 h-5 inline mr-2" />
-            Kullanıcılar
-          </button>
-          <button
-            onClick={() => setActiveTab('sla')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'sla'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Clock className="w-5 h-5 inline mr-2" />
-            SLA Planları
-          </button>
-          <button
-            onClick={() => setActiveTab('categories')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'categories'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <FolderTree className="w-5 h-5 inline mr-2" />
-            Kategoriler
-          </button>
-          <button
-            onClick={() => setActiveTab('automation')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'automation'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <Zap className="w-5 h-5 inline mr-2" />
-            Automation Rules
-          </button>
-          <button
-            onClick={() => setActiveTab('kb')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'kb'
-                ? 'border-primary-600 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            <BookOpen className="w-5 h-5 inline mr-2" />
-            Bilgi Bankası
-          </button>
-        </nav>
-      </div>
-
-      {error && (
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-white/50 overflow-hidden">
+          <nav className="flex flex-wrap gap-3 p-3">
+            <button
+              onClick={() => setActiveTab('departments')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'departments'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <Building2 className="w-4 h-4 mr-2" />
+              Departmanlar
+            </button>
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'users'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Kullanıcılar
+            </button>
+            <button
+              onClick={() => setActiveTab('sla')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'sla'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              SLA Planları
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'categories'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <FolderTree className="w-4 h-4 mr-2" />
+              Kategoriler
+            </button>
+            <button
+              onClick={() => setActiveTab('automation')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'automation'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Automation
+            </button>
+            <button
+              onClick={() => setActiveTab('kb')}
+              className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                activeTab === 'kb'
+                  ? 'bg-primary-600 text-white shadow-md'
+                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
+              <BookOpen className="w-4 h-4 mr-2" />
+              Bilgi Bankası
+            </button>
+          </nav>
+        </div>      {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 flex items-start">
           <AlertCircle size={20} className="mr-2 mt-0.5 flex-shrink-0" />
           <span>{error}</span>
@@ -706,10 +828,21 @@ export default function Admin() {
                 />
               </div>
             </div>
-            <button type="submit" className="btn btn-primary">
-              <Plus size={18} className="mr-2" />
-              Departman Olustur
-            </button>
+            <div className="flex gap-2">
+              <button type="submit" className="btn btn-primary">
+                <Plus size={18} className="mr-2" />
+                {editingDept ? 'Departmanı Güncelle' : 'Departman Oluştur'}
+              </button>
+              {editingDept && (
+                <button 
+                  type="button" 
+                  onClick={cancelEditDept}
+                  className="btn bg-gray-500 hover:bg-gray-600 text-white"
+                >
+                  İptal
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -739,6 +872,13 @@ export default function Admin() {
                   </div>
                   <div className="flex space-x-2">
                     <button
+                      onClick={() => startEditDept(dept)}
+                      className="btn bg-blue-600 hover:bg-blue-700 text-white"
+                      title="Düzenle"
+                    >
+                      <Edit size={18} />
+                    </button>
+                    <button
                       onClick={() => loadMembers(dept.id)}
                       className="btn btn-secondary"
                     >
@@ -748,6 +888,7 @@ export default function Admin() {
                     <button
                       onClick={() => deleteDept(dept.id)}
                       className="btn bg-red-600 hover:bg-red-700 text-white"
+                      title="Sil"
                     >
                       <Trash2 size={18} />
                     </button>
@@ -1006,11 +1147,11 @@ export default function Admin() {
             )}
           </div>
 
-          <div className="card bg-blue-50 border-blue-200">
+          <div className="card bg-gray-50 border-gray-200">
             <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-2">SLA (Service Level Agreement) Nedir?</p>
+              <AlertCircle className="w-5 h-5 text-gray-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <p className="font-semibold mb-2 text-gray-900">SLA (Service Level Agreement) Nedir?</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li><strong>Yanıt Süresi:</strong> Ticket oluşturulduktan sonra ilk yanıt için maksimum süre</li>
                   <li><strong>Çözüm Süresi:</strong> Ticket'ın tamamen çözülmesi için maksimum süre</li>
@@ -1078,10 +1219,12 @@ export default function Admin() {
                   </select>
                 </div>
               </div>
-              <button type="submit" className="btn-primary">
-                <Plus className="w-4 h-4 mr-2" />
-                Kategori Oluştur
-              </button>
+              <div className="flex justify-start">
+                <button type="submit" className="btn-primary">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Kategori Oluştur
+                </button>
+              </div>
             </form>
           </div>
 
@@ -1101,11 +1244,11 @@ export default function Admin() {
             )}
           </div>
 
-          <div className="card bg-blue-50 border-blue-200">
+          <div className="card bg-gray-50 border-gray-200">
             <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-2">Kategoriler Nasıl Kullanılır?</p>
+              <AlertCircle className="w-5 h-5 text-gray-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <p className="font-semibold mb-2 text-gray-900">Kategoriler Nasıl Kullanılır?</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li><strong>Ana Kategoriler:</strong> Üst kategori seçmeden oluşturulan kategoriler</li>
                   <li><strong>Alt Kategoriler:</strong> Bir üst kategoriye bağlı kategoriler (hiyerarşik yapı)</li>
@@ -1235,10 +1378,12 @@ export default function Admin() {
                 </label>
               </div>
 
-              <button type="submit" className="btn-primary">
-                <Plus className="w-4 h-4 mr-2" />
-                Automation Rule Oluştur
-              </button>
+              <div className="flex justify-start">
+                <button type="submit" className="btn-primary">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Automation Rule Oluştur
+                </button>
+              </div>
             </form>
           </div>
 
@@ -1339,11 +1484,11 @@ export default function Admin() {
             )}
           </div>
 
-          <div className="card bg-blue-50 border-blue-200">
+          <div className="card bg-gray-50 border-gray-200">
             <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-semibold mb-2">Automation Rules Nasıl Çalışır?</p>
+              <AlertCircle className="w-5 h-5 text-gray-600 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-gray-700">
+                <p className="font-semibold mb-2 text-gray-900">Automation Rules Nasıl Çalışır?</p>
                 <ul className="list-disc list-inside space-y-1">
                   <li><strong>Trigger:</strong> Rule'un ne zaman çalışacağını belirler (örn: yeni ticket, durum değişimi)</li>
                   <li><strong>Condition:</strong> Rule'un çalışması için gerekli koşullar (JSON formatında)</li>
@@ -1684,6 +1829,22 @@ export default function Admin() {
                   />
                 </div>
                 <div>
+                  <label htmlFor="orgDepartment" className="label">
+                    Organizasyon Departmanı
+                  </label>
+                  <input
+                    id="orgDepartment"
+                    type="text"
+                    value={newOrgDepartment}
+                    onChange={(e) => setNewOrgDepartment(e.target.value)}
+                    className="input"
+                    placeholder="İnsan Kaynakları, AR-GE, Finans, vb."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Bu sadece bilgilendirme amaçlıdır. Ticket sistemi için ayrıca departman atayabilirsiniz.
+                  </p>
+                </div>
+                <div>
                   <label htmlFor="password" className="label">
                     Şifre <span className="text-red-500">*</span>
                   </label>
@@ -1699,7 +1860,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label htmlFor="department" className="label">
-                    Departman
+                    Ticket Departmanı
                   </label>
                   <select
                     id="department"
@@ -1712,6 +1873,9 @@ export default function Admin() {
                       <option key={dept.id} value={dept.id}>{dept.name}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Bu kullanıcının hangi departmanın ticketlarını yöneteceğini belirtir.
+                  </p>
                 </div>
               </div>
               <button type="submit" className="btn btn-primary">
@@ -1721,8 +1885,181 @@ export default function Admin() {
             </form>
           </div>
 
+          {editingUser && (
+            <div className="card mb-6 border-2 border-blue-500">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <Edit className="w-6 h-6 mr-2 text-blue-600" />
+                Kullanıcı Düzenle: {editingUser.displayName || editingUser.username}
+              </h2>
+              <form onSubmit={updateUser} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="label">
+                      Kullanıcı Adı (Değiştirilemez)
+                    </label>
+                    <input
+                      type="text"
+                      value={editUsername}
+                      disabled
+                      className="input bg-gray-100 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="editEmail" className="label">
+                      Email
+                    </label>
+                    <input
+                      id="editEmail"
+                      type="email"
+                      value={editEmail}
+                      onChange={(e) => setEditEmail(e.target.value)}
+                      className="input"
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="editDisplayName" className="label">
+                      Ad Soyad
+                    </label>
+                    <input
+                      id="editDisplayName"
+                      type="text"
+                      value={editDisplayName}
+                      onChange={(e) => setEditDisplayName(e.target.value)}
+                      className="input"
+                      placeholder="Ad Soyad"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="editJobTitle" className="label">
+                      Ünvan
+                    </label>
+                    <input
+                      id="editJobTitle"
+                      type="text"
+                      value={editJobTitle}
+                      onChange={(e) => setEditJobTitle(e.target.value)}
+                      className="input"
+                      placeholder="Yazılım Geliştirici, Müdür, vb."
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="editOrgDepartment" className="label">
+                      Organizasyon Departmanı
+                    </label>
+                    <input
+                      id="editOrgDepartment"
+                      type="text"
+                      value={editOrgDepartment}
+                      onChange={(e) => setEditOrgDepartment(e.target.value)}
+                      className="input"
+                      placeholder="İnsan Kaynakları, AR-GE, Finans, vb."
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="editDepartment" className="label">
+                      Ticket Departmanı
+                    </label>
+                    <select
+                      id="editDepartment"
+                      value={editDepartmentId}
+                      onChange={(e) => setEditDepartmentId(e.target.value ? Number(e.target.value) : '')}
+                      className="input"
+                    >
+                      <option value="">Departman Seçiniz (Opsiyonel)</option>
+                      {departments.map(dept => (
+                        <option key={dept.id} value={dept.id}>{dept.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button type="submit" className="btn bg-blue-600 hover:bg-blue-700 text-white">
+                    <Save size={18} className="mr-2 inline" />
+                    Değişiklikleri Kaydet
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={cancelEditUser}
+                    className="btn bg-gray-500 hover:bg-gray-600 text-white"
+                  >
+                    İptal
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Kullanıcı Yönetimi</h3>
+            
+            {/* Filtreleme Alanları */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Search className="w-4 h-4 mr-2" />
+                Filtrele
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Ara
+                  </label>
+                  <input
+                    type="text"
+                    value={filterSearch}
+                    onChange={(e) => setFilterSearch(e.target.value)}
+                    className="input text-sm"
+                    placeholder="Ad, email, kullanıcı adı..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Departman
+                  </label>
+                  <select
+                    value={filterDepartment}
+                    onChange={(e) => setFilterDepartment(e.target.value ? Number(e.target.value) : '')}
+                    className="input text-sm"
+                  >
+                    <option value="">Tümü</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Rol
+                  </label>
+                  <select
+                    value={filterRole}
+                    onChange={(e) => setFilterRole(e.target.value)}
+                    className="input text-sm"
+                  >
+                    <option value="">Tümü</option>
+                    <option value="SuperAdmin">SuperAdmin</option>
+                    <option value="DepartmentManager">DepartmentManager</option>
+                    <option value="Agent">Agent</option>
+                    <option value="EndUser">EndUser</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Durum
+                  </label>
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value ? Number(e.target.value) : '')}
+                    className="input text-sm"
+                  >
+                    <option value="">Tümü</option>
+                    <option value="0">Aktif</option>
+                    <option value="1">Pasif</option>
+                    <option value="2">Askıda</option>
+                  </select>
+                </div>
+              </div>
+            </div>
             
             {loadingUsers ? (
               <div className="flex items-center justify-center py-12">
@@ -1740,20 +2077,60 @@ export default function Admin() {
                       <th>Ad Soyad</th>
                       <th>Kullanıcı Adı</th>
                       <th>Email</th>
-                      <th>Departman</th>
+                      <th>Organizasyon</th>
+                      <th>Ticket Departmanı</th>
                       <th>Roller</th>
                       <th>Durum</th>
                       <th>İşlemler</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users.map((user) => {
+                    {users
+                      .filter((user) => {
+                        // Arama filtresi
+                        if (filterSearch) {
+                          const search = filterSearch.toLowerCase();
+                          const matchesSearch = 
+                            user.displayName?.toLowerCase().includes(search) ||
+                            user.username?.toLowerCase().includes(search) ||
+                            user.email?.toLowerCase().includes(search) ||
+                            user.organizationalDepartment?.toLowerCase().includes(search) ||
+                            user.jobTitle?.toLowerCase().includes(search);
+                          if (!matchesSearch) return false;
+                        }
+                        
+                        // Departman filtresi
+                        if (filterDepartment && user.departmentId !== filterDepartment) {
+                          return false;
+                        }
+                        
+                        // Rol filtresi
+                        if (filterRole && !user.roles?.includes(filterRole)) {
+                          return false;
+                        }
+                        
+                        // Durum filtresi
+                        if (filterStatus !== '' && user.status !== filterStatus) {
+                          return false;
+                        }
+                        
+                        return true;
+                      })
+                      .map((user) => {
                       const userDept = departments.find(d => d.id === user.departmentId);
                       return (
                         <tr key={user.id}>
-                          <td className="font-medium">{user.displayName}</td>
+                          <td className="font-medium">
+                            <div>{user.displayName}</div>
+                            {user.jobTitle && (
+                              <div className="text-xs text-gray-500">{user.jobTitle}</div>
+                            )}
+                          </td>
                           <td className="text-sm text-gray-600">{user.username}</td>
                           <td className="text-sm text-gray-600">{user.email}</td>
+                          <td className="text-sm">
+                            {user.organizationalDepartment || <span className="text-gray-400">—</span>}
+                          </td>
                           <td className="text-sm">{userDept?.name || '—'}</td>
                           <td>
                             {user.roles && user.roles.length > 0 ? (
@@ -1774,15 +2151,29 @@ export default function Admin() {
                             </span>
                           </td>
                           <td>
-                            {user.status === 'Active' && (
+                            <div className="flex gap-2">
                               <button
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="text-red-600 hover:text-red-800 text-sm flex items-center"
+                                onClick={() => startEditUser(user)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center transition-colors"
+                                title="Düzenle"
                               >
-                                <Trash2 size={16} className="mr-1" />
-                                Arşivle
+                                <Edit size={16} className="mr-1" />
+                                Düzenle
                               </button>
-                            )}
+                              {canDeleteUsers && !user.roles?.includes('SuperAdmin') ? (
+                                <button
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium flex items-center transition-colors"
+                                >
+                                  <Trash2 size={16} className="mr-1" />
+                                  Sil
+                                </button>
+                              ) : user.roles?.includes('SuperAdmin') ? (
+                                <span className="text-gray-400 text-sm">Korumalı</span>
+                              ) : (
+                                <span className="text-gray-400 text-sm">—</span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1825,6 +2216,7 @@ export default function Admin() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

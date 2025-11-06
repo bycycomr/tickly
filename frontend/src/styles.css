@@ -36,7 +36,7 @@
 
   /* Card Styles */
   .card {
-    @apply bg-white rounded-xl shadow-lg border border-gray-100 p-6 hover:shadow-xl transition-shadow duration-300;
+    @apply bg-white rounded-xl shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow duration-300;
   }
 
   /* Badge Styles */
@@ -66,23 +66,23 @@
   }
 
   .input {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-300;
+    @apply w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-400;
   }
 
   .textarea {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-300;
+    @apply w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-400;
   }
 
   .select {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-300;
+    @apply w-full px-4 py-2.5 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed transition-all duration-200 hover:border-primary-400;
   }
 
   .checkbox {
-    @apply h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded transition-all;
+    @apply h-4 w-4 text-primary-600 bg-white border-gray-300 rounded focus:ring-primary-500 transition-all;
   }
 
   .radio {
-    @apply h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 transition-all;
+    @apply h-4 w-4 text-primary-600 bg-white border-gray-300 focus:ring-primary-500 transition-all;
   }
 
   /* Table Styles */

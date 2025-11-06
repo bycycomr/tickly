@@ -127,7 +127,42 @@ namespace Tickly.Api.Controllers
             }
 
             var list = await query.OrderByDescending(t => t.CreatedAt).ToListAsync();
-            return Ok(list);
+            
+            // Enrich with user names
+            var userIds = list.Select(t => t.CreatorId).Concat(list.Select(t => t.AssignedToUserId))
+                .Where(id => id != null).Distinct().ToList();
+            var users = await _db.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id);
+            
+            var enrichedList = list.Select(t => new
+            {
+                t.Id,
+                t.TenantId,
+                t.Title,
+                t.Description,
+                t.CreatorId,
+                CreatorName = t.CreatorId != null && users.ContainsKey(t.CreatorId) 
+                    ? (users[t.CreatorId].DisplayName ?? users[t.CreatorId].Username) 
+                    : null,
+                t.DepartmentId,
+                t.AssignedToUserId,
+                AssignedToName = t.AssignedToUserId != null && users.ContainsKey(t.AssignedToUserId)
+                    ? (users[t.AssignedToUserId].DisplayName ?? users[t.AssignedToUserId].Username)
+                    : null,
+                t.CategoryId,
+                t.SLAPlanId,
+                t.Channel,
+                t.Priority,
+                t.Status,
+                t.Tags,
+                t.CreatedAt,
+                t.UpdatedAt,
+                t.EstimatedResolutionAt,
+                t.DueAt,
+                t.ClosedAt,
+                t.LastEventAt
+            }).ToList();
+            
+            return Ok(enrichedList);
         }
 
         [HttpGet("{id:int}")]
@@ -138,16 +173,52 @@ namespace Tickly.Api.Controllers
 
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
-            if (IsSuperAdmin()) return Ok(t);
-
+            
             var deptRoles = GetDeptRoles();
             var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
 
-            if (t.AssignedToUserId == userId) return Ok(t);
-            if (t.CreatorId == userId) return Ok(t);
-            if (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value)) return Ok(t);
-
-            return Forbid();
+            // Authorization check
+            bool authorized = IsSuperAdmin() || 
+                             t.AssignedToUserId == userId || 
+                             t.CreatorId == userId ||
+                             (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value));
+            
+            if (!authorized) return Forbid();
+            
+            // Enrich with user names
+            var creatorName = t.CreatorId != null 
+                ? (await _db.Users.FindAsync(t.CreatorId))?.DisplayName ?? (await _db.Users.FindAsync(t.CreatorId))?.Username
+                : null;
+            var assignedToName = t.AssignedToUserId != null
+                ? (await _db.Users.FindAsync(t.AssignedToUserId))?.DisplayName ?? (await _db.Users.FindAsync(t.AssignedToUserId))?.Username
+                : null;
+            
+            var enriched = new
+            {
+                t.Id,
+                t.TenantId,
+                t.Title,
+                t.Description,
+                t.CreatorId,
+                CreatorName = creatorName,
+                t.DepartmentId,
+                t.AssignedToUserId,
+                AssignedToName = assignedToName,
+                t.CategoryId,
+                t.SLAPlanId,
+                t.Channel,
+                t.Priority,
+                t.Status,
+                t.Tags,
+                t.CreatedAt,
+                t.UpdatedAt,
+                t.EstimatedResolutionAt,
+                t.DueAt,
+                t.ClosedAt,
+                t.LastEventAt
+            };
+            
+            return Ok(enriched);
         }
 
         [HttpPost]

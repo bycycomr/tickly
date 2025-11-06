@@ -408,7 +408,7 @@ export default function TicketList() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {ticket.creatorId}
+                        {ticket.creatorName || ticket.creatorId}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
@@ -453,7 +453,7 @@ export default function TicketList() {
                     </div>
                   </div>
                   <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
-                    <span className="font-medium">Oluşturan:</span> {ticket.creatorId}
+                    <span className="font-medium">Oluşturan:</span> {ticket.creatorName || ticket.creatorId}
                   </div>
                 </div>
               ))}

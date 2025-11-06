@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Tickly.Api.Data;
 
@@ -10,9 +11,11 @@ using Tickly.Api.Data;
 namespace Tickly.Api.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106151337_AddPasswordResetToUser")]
+    partial class AddPasswordResetToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.11");
@@ -612,16 +615,10 @@ namespace Tickly.Api.Migrations
                         .HasMaxLength(250)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("JobTitle")
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("MetadataJson")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("OrganizationalDepartment")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("PasswordHash")

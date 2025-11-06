@@ -90,7 +90,9 @@ namespace Tickly.Api.Controllers
             { 
                 Username = req.Username, 
                 Email = req.Email, 
-                DisplayName = req.DisplayName, 
+                DisplayName = req.DisplayName,
+                OrganizationalDepartment = req.OrganizationalDepartment,
+                JobTitle = req.JobTitle,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password) 
             };
             
@@ -210,7 +212,7 @@ namespace Tickly.Api.Controllers
     }
 
     public class LoginRequest { public string Username { get; set; } = null!; public string Password { get; set; } = null!; }
-    public class RegisterRequest { public string Username { get; set; } = null!; public string Password { get; set; } = null!; public string? Email { get; set; } public string? DisplayName { get; set; } }
+    public class RegisterRequest { public string Username { get; set; } = null!; public string Password { get; set; } = null!; public string? Email { get; set; } public string? DisplayName { get; set; } public string? OrganizationalDepartment { get; set; } public string? JobTitle { get; set; } }
     public class ForgotPasswordRequest { public string Email { get; set; } = null!; }
     public class ResetPasswordRequest { public string Token { get; set; } = null!; public string NewPassword { get; set; } = null!; }
 }

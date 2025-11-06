@@ -39,6 +39,21 @@ namespace Tickly.Api.Controllers
             return Ok(d);
         }
 
+        [HttpPut("departments/{id}")]
+        public IActionResult UpdateDepartment(int id, [FromBody] CreateDepartmentDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest(new { error = "Name required" });
+            
+            var dept = _db.Departments.Find(id);
+            if (dept == null) return NotFound(new { error = "Department not found" });
+            
+            dept.Name = dto.Name;
+            dept.Description = dto.Description;
+            _db.SaveChanges();
+            
+            return Ok(dept);
+        }
+
         [HttpDelete("departments/{id}")]
         public IActionResult DeleteDepartment(int id)
         {
@@ -68,6 +83,8 @@ namespace Tickly.Api.Controllers
                     u.DisplayName,
                     u.Status,
                     u.DepartmentId,
+                    u.OrganizationalDepartment,
+                    u.JobTitle,
                     u.CreatedAt,
                     Roles = _db.RoleAssignments
                         .Where(r => r.UserId == u.Id)
@@ -117,6 +134,12 @@ namespace Tickly.Api.Controllers
             if (dto.Status.HasValue)
                 user.Status = dto.Status.Value;
             
+            if (dto.OrganizationalDepartment != null)
+                user.OrganizationalDepartment = string.IsNullOrWhiteSpace(dto.OrganizationalDepartment) ? null : dto.OrganizationalDepartment;
+            
+            if (dto.JobTitle != null)
+                user.JobTitle = string.IsNullOrWhiteSpace(dto.JobTitle) ? null : dto.JobTitle;
+            
             _db.SaveChanges();
             return Ok(user);
         }
@@ -127,18 +150,30 @@ namespace Tickly.Api.Controllers
             var user = _db.Users.Find(id);
             if (user == null) return NotFound(new { error = "User not found" });
             
+            // Check if this is the last SuperAdmin
+            var isSuperAdmin = _db.RoleAssignments.Any(r => r.UserId == id && r.Role == RoleName.SuperAdmin);
+            if (isSuperAdmin)
+            {
+                var superAdminCount = _db.RoleAssignments.Count(r => r.Role == RoleName.SuperAdmin);
+                if (superAdminCount <= 1)
+                {
+                    return BadRequest(new { error = "Cannot delete the last SuperAdmin" });
+                }
+            }
+            
             // Remove role assignments
             var roles = _db.RoleAssignments.Where(r => r.UserId == id).ToList();
             _db.RoleAssignments.RemoveRange(roles);
             
-            // Don't actually delete, just archive
-            user.Status = UserStatus.Archived;
+            // Remove user completely from database
+            _db.Users.Remove(user);
             _db.SaveChanges();
             
-            return Ok(new { message = "User archived successfully" });
+            return Ok(new { message = "User deleted successfully" });
         }
 
         [HttpGet("departments/{id}/members")]
+        [AllowAnonymous] // Ticket assignment için tüm kullanıcılar görebilir
         public IActionResult GetDepartmentMembers(int id)
         {
             var members = _db.RoleAssignments.Where(r => r.DepartmentId == id).ToList();
@@ -519,6 +554,8 @@ namespace Tickly.Api.Controllers
         public string? Email { get; set; }
         public int? DepartmentId { get; set; }
         public UserStatus? Status { get; set; }
+        public string? OrganizationalDepartment { get; set; }
+        public string? JobTitle { get; set; }
     }
     
     public class CreateSLAPlanDto

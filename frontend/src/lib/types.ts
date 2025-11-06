@@ -22,6 +22,8 @@ export interface RegisterRequest {
   email: string;
   password: string;
   displayName: string;
+  organizationalDepartment?: string;
+  jobTitle?: string;
 }
 
 export interface LoginResponse {
@@ -66,7 +68,9 @@ export interface Ticket {
   priority: TicketPriority;
   channel: TicketChannel;
   creatorId: string;
+  creatorName?: string;
   assignedToUserId?: string;
+  assignedToName?: string;
   slaPlanId?: number;
   estimatedResolutionAt?: string;
   dueAt?: string;

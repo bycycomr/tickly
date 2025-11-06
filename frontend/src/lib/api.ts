@@ -211,6 +211,11 @@ class ApiClient {
     return response.data;
   }
 
+  async updateDepartment(id: number, data: { name: string; description?: string }): Promise<Department> {
+    const response = await this.client.put<Department>(`/api/admin/departments/${id}`, data);
+    return response.data;
+  }
+
   async deleteDepartment(id: number): Promise<void> {
     await this.client.delete(`/api/admin/departments/${id}`);
   }

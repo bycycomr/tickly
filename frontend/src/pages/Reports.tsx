@@ -48,20 +48,30 @@ export default function Reports() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+        <div className="animate-spin rounded-full h-16 w-16 border-4 border-purple-200 border-t-purple-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <BarChart3 className="w-8 h-8 text-primary-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Raporlar</h1>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden py-8">
+      {/* Animated blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/3 w-96 h-96 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
       </div>
+
+      <div className="relative space-y-6 max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between glass bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border-2 border-white/50 p-6 animate-slide-up">
+          <div className="flex items-center space-x-3">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-2xl shadow-xl hover:scale-110 hover:rotate-6 transition-all duration-300">
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">Raporlar</h1>
+          </div>
+        </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -70,55 +80,63 @@ export default function Reports() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 hover:scale-105 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Toplam Talep</p>
-              <p className="text-3xl font-bold text-gray-900">{stats?.total || stats?.totalTickets || 0}</p>
+              <p className="text-sm text-gray-600 font-semibold">Toplam Talep</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{stats?.total || stats?.totalTickets || 0}</p>
             </div>
-            <BarChart3 className="w-10 h-10 text-blue-600" />
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 hover:scale-105 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Açık Talepler</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-sm text-gray-600 font-semibold">Açık Talepler</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
                 {stats?.openTickets || 0}
               </p>
             </div>
-            <TrendingUp className="w-10 h-10 text-yellow-600" />
+            <div className="p-3 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl shadow-lg">
+              <TrendingUp className="w-8 h-8 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 hover:scale-105 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Tamamlanan</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-sm text-gray-600 font-semibold">Tamamlanan</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {stats?.closedTickets || 0}
               </p>
             </div>
-            <BarChart3 className="w-10 h-10 text-green-600" />
+            <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl shadow-lg">
+              <BarChart3 className="w-8 h-8 text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 hover:scale-105 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">SLA Uyum</p>
-              <p className="text-3xl font-bold text-gray-900">
+              <p className="text-sm text-gray-600 font-semibold">SLA Uyum</p>
+              <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 {stats?.slaComplianceRate ? `${(stats.slaComplianceRate * 100).toFixed(0)}%` : 'N/A'}
               </p>
             </div>
-            <Calendar className="w-10 h-10 text-purple-600" />
+            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+              <Calendar className="w-8 h-8 text-white" />
+            </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card">
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 animate-slide-up">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Durum Dağılımı</h2>
           <div className="space-y-3">
             {stats?.byStatus && (Array.isArray(stats.byStatus) 
@@ -161,8 +179,8 @@ export default function Reports() {
           </div>
         </div>
 
-        <div className="card">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Öncelik Dağılımı</h2>
+        <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 animate-slide-up">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">Öncelik Dağılımı</h2>
           <div className="space-y-3">
             {stats?.byPriority && (Array.isArray(stats.byPriority)
               ? stats.byPriority.map((item: any) => {
@@ -219,8 +237,8 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="card">
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Rapor Dışa Aktar</h2>
+      <div className="glass bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border-2 border-white/50 p-6 animate-slide-up">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-4">Rapor Dışa Aktar</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
             <label className="label">Başlangıç Tarihi</label>
@@ -241,7 +259,7 @@ export default function Reports() {
             />
           </div>
           <div className="flex items-end">
-            <button onClick={handleExport} className="btn-primary w-full">
+            <button onClick={handleExport} className="btn-primary bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 w-full">
               <Download className="w-4 h-4 mr-2 inline" />
               CSV İndir
             </button>
@@ -250,6 +268,7 @@ export default function Reports() {
         <p className="text-sm text-gray-600">
           Belirtilen tarih aralığındaki tüm talepleri CSV formatında indirebilirsiniz.
         </p>
+      </div>
       </div>
     </div>
   )
