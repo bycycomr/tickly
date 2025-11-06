@@ -73,6 +73,22 @@ export interface Ticket {
   closedAt?: string;
   createdAt: string;
   updatedAt: string;
+  attachments?: Attachment[];
+}
+
+export interface Attachment {
+  id: number;
+  ticketId: number;
+  tenantId: string;
+  fileName: string;
+  mimeType: string;
+  storagePath: string;
+  sizeBytes: number;
+  checksum?: string;
+  uploadedBy?: string;
+  scannedAt?: string;
+  scanStatus: 'Pending' | 'Clean' | 'Quarantined' | 'Failed';
+  createdAt: string;
 }
 
 export interface TicketEvent {

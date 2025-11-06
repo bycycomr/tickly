@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Filter, List, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Filter, List, ChevronLeft, ChevronRight, SlidersHorizontal, X, Calendar, ArrowUpDown } from 'lucide-react'
 import api from '../lib/api'
 import { Ticket } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
@@ -50,9 +50,17 @@ export default function TicketList() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  // Basic filters
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
   const [priorityFilter, setPriorityFilter] = useState<number | 'all'>('all')
+  
+  // Advanced filters
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [sortBy, setSortBy] = useState<'date' | 'priority' | 'status'>('date')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -82,33 +90,104 @@ export default function TicketList() {
 
   useEffect(() => { load() }, [statusFilter, priorityFilter, search])
 
-  const totalPages = Math.ceil(tickets.length / itemsPerPage)
+  // Apply advanced filters and sorting
+  const filteredAndSortedTickets = React.useMemo(() => {
+    let result = [...tickets]
+
+    // Date range filter
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom)
+      result = result.filter(t => new Date(t.createdAt) >= fromDate)
+    }
+    if (dateTo) {
+      const toDate = new Date(dateTo)
+      toDate.setHours(23, 59, 59, 999) // End of day
+      result = result.filter(t => new Date(t.createdAt) <= toDate)
+    }
+
+    // Sorting
+    result.sort((a, b) => {
+      let comparison = 0
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          break
+        case 'priority':
+          comparison = a.priority - b.priority
+          break
+        case 'status':
+          comparison = a.status - b.status
+          break
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison
+    })
+
+    return result
+  }, [tickets, dateFrom, dateTo, sortBy, sortOrder])
+
+  const totalPages = Math.ceil(filteredAndSortedTickets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedTickets = tickets.slice(startIndex, startIndex + itemsPerPage)
+  const paginatedTickets = filteredAndSortedTickets.slice(startIndex, startIndex + itemsPerPage)
+
+  function clearAdvancedFilters() {
+    setDateFrom('')
+    setDateTo('')
+    setSortBy('date')
+    setSortOrder('desc')
+  }
+
+  const hasActiveAdvancedFilters = dateFrom || dateTo || sortBy !== 'date' || sortOrder !== 'desc'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 right-10 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute bottom-10 left-10 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/3 w-96 h-96 bg-gradient-to-br from-pink-300 to-red-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {/* Header with gradient */}
         <div className="flex items-center justify-between animate-slide-in-left">
           <div className="flex items-center space-x-4">
-            <div className="bg-gradient-to-br from-primary-500 to-purple-600 p-3 rounded-2xl shadow-lg">
-              <List className="w-8 h-8 text-white" />
+            <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 rounded-2xl shadow-2xl transform hover:scale-110 hover:rotate-6 transition-all duration-300">
+              <List className="w-8 h-8 text-white" strokeWidth={2.5} />
             </div>
             <div>
-              <h1 className="text-3xl font-bold gradient-text">Talepler</h1>
-              <p className="text-sm text-gray-500 mt-1">Tüm destek taleplerini yönetin</p>
+              <h1 className="text-4xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                Talepler
+              </h1>
+              <p className="text-sm text-gray-700 mt-1 font-medium">Tüm destek taleplerini yönetin ✨</p>
             </div>
           </div>
-          <div className="glass px-4 py-2 rounded-xl shadow-md">
-            <span className="text-sm font-semibold text-gray-700">{tickets.length}</span>
-            <span className="text-sm text-gray-500 ml-1">talep</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`glass px-5 py-3 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex items-center gap-3 transform hover:scale-105 ${
+                hasActiveAdvancedFilters ? 'ring-4 ring-purple-400 bg-gradient-to-r from-purple-100 to-pink-100' : 'bg-white/80'
+              }`}
+            >
+              <SlidersHorizontal className={`w-5 h-5 ${hasActiveAdvancedFilters ? 'text-purple-600' : 'text-indigo-600'}`} />
+              <span className="text-sm font-bold text-gray-800">Gelişmiş Filtre</span>
+              {hasActiveAdvancedFilters && (
+                <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-black shadow-lg animate-pulse">
+                  !
+                </span>
+              )}
+            </button>
+            <div className="glass bg-gradient-to-r from-indigo-100 to-purple-100 px-6 py-3 rounded-2xl shadow-lg border-2 border-white/50">
+              <span className="text-lg font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{filteredAndSortedTickets.length}</span>
+              <span className="text-sm text-gray-700 ml-2 font-semibold">talep</span>
+            </div>
           </div>
         </div>
 
         {/* Filters Card with glassmorphism */}
-        <div className="glass rounded-2xl shadow-xl p-6 border border-white/50 animate-slide-up">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="glass bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border-2 border-white/50 animate-slide-up">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
               <input
@@ -157,6 +236,94 @@ export default function TicketList() {
           </div>
         </div>
 
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="glass rounded-2xl shadow-xl p-6 border border-white/50 animate-slide-up">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <SlidersHorizontal className="w-6 h-6 text-primary-600" />
+                <h3 className="text-lg font-bold text-gray-900">Gelişmiş Filtreler</h3>
+              </div>
+              <button
+                onClick={() => setShowAdvancedFilters(false)}
+                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Date Range */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Calendar className="w-4 h-4 text-primary-600" />
+                  Başlangıç Tarihi
+                </label>
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="input bg-white/80 backdrop-blur-sm"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Calendar className="w-4 h-4 text-primary-600" />
+                  Bitiş Tarihi
+                </label>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="input bg-white/80 backdrop-blur-sm"
+                />
+              </div>
+
+              {/* Sort Options */}
+              <div className="space-y-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <ArrowUpDown className="w-4 h-4 text-primary-600" />
+                  Sıralama
+                </label>
+                <div className="flex gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="input bg-white/80 backdrop-blur-sm flex-1"
+                  >
+                    <option value="date">Tarih</option>
+                    <option value="priority">Öncelik</option>
+                    <option value="status">Durum</option>
+                  </select>
+                  <button
+                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                    className="glass px-4 py-2 rounded-xl hover:bg-white/50 transition-all"
+                    title={sortOrder === 'asc' ? 'Artan' : 'Azalan'}
+                  >
+                    <ArrowUpDown className={`w-5 h-5 text-primary-600 transition-transform ${
+                      sortOrder === 'desc' ? 'rotate-180' : ''
+                    }`} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveAdvancedFilters && (
+              <div className="mt-6 pt-6 border-t border-gray-200 flex justify-end">
+                <button
+                  onClick={clearAdvancedFilters}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                >
+                  <X className="w-4 h-4" />
+                  Filtreleri Temizle
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Results Card */}
         <div className="card hover-lift animate-scale-in">
           {loading ? (
@@ -184,39 +351,42 @@ export default function TicketList() {
         ) : (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto custom-scrollbar rounded-xl">
               <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+                <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       ID
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Başlık
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Durum
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Öncelik
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Oluşturan
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Tarih
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {paginatedTickets.map(ticket => (
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {paginatedTickets.map((ticket, index) => (
                     <tr
                       key={ticket.id}
                       onClick={() => navigate(`/tickets/${ticket.id}`)}
-                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="hover:bg-gradient-to-r hover:from-primary-50 hover:to-purple-50 cursor-pointer transition-all duration-200 group animate-fade-in"
+                      style={{ animationDelay: `${index * 30}ms` }}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        #{ticket.id}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <span className="font-bold text-primary-600 group-hover:text-primary-700">
+                          #{ticket.id}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className="font-medium">{ticket.title}</div>
@@ -251,70 +421,71 @@ export default function TicketList() {
 
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
-              {paginatedTickets.map(ticket => (
+              {paginatedTickets.map((ticket, index) => (
                 <div
                   key={ticket.id}
                   onClick={() => navigate(`/tickets/${ticket.id}`)}
-                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                  className="glass rounded-xl p-5 hover:shadow-xl transition-all duration-200 cursor-pointer hover-lift border border-white/50 animate-fade-in"
+                  style={{ animationDelay: `${index * 50}ms` }}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-medium text-gray-500">#{ticket.id}</span>
-                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${priorityColors[ticket.priority]}`}>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-sm font-bold text-primary-600">#{ticket.id}</span>
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${priorityColors[ticket.priority]}`}>
                           {priorityMap[ticket.priority]}
                         </span>
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{ticket.title}</h3>
+                      <h3 className="font-bold text-gray-900 mb-2 text-lg">{ticket.title}</h3>
                       {ticket.description && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">
                           {ticket.description}
                         </p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[ticket.status]}`}>
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                    <span className={`px-3 py-1.5 text-xs font-semibold rounded-full shadow-sm ${statusColors[ticket.status]}`}>
                       {statusMap[ticket.status]}
                     </span>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-500 font-medium">
                       {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
                     </div>
                   </div>
-                  <div className="mt-2 text-xs text-gray-500">
-                    Oluşturan: {ticket.creatorId}
+                  <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500">
+                    <span className="font-medium">Oluşturan:</span> {ticket.creatorId}
                   </div>
                 </div>
               ))}
             </div>
 
             {totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
-                <div className="text-sm text-gray-700 text-center sm:text-left">
-                  <span className="font-medium">{startIndex + 1}</span>
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-8 pt-6 border-t border-gray-200 gap-4">
+                <div className="glass px-4 py-2 rounded-xl shadow-md text-sm font-medium text-gray-700">
+                  <span className="text-primary-600">{startIndex + 1}</span>
                   {' - '}
-                  <span className="font-medium">{Math.min(startIndex + itemsPerPage, tickets.length)}</span>
+                  <span className="text-primary-600">{Math.min(startIndex + itemsPerPage, tickets.length)}</span>
                   {' / '}
-                  <span className="font-medium">{tickets.length}</span>
+                  <span className="text-primary-600">{tickets.length}</span>
                   {' talep'}
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
-                    className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="glass p-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/90 hover:shadow-lg transition-all duration-200 group"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    <ChevronLeft className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors" />
                   </button>
-                  <span className="px-4 py-2 text-sm text-gray-700">
-                    {currentPage} / {totalPages}
-                  </span>
+                  <div className="glass px-6 py-3 rounded-xl font-bold text-primary-600 shadow-md">
+                    {currentPage} <span className="text-gray-400 font-normal">/ {totalPages}</span>
+                  </div>
                   <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
-                    className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="glass p-3 rounded-xl disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/90 hover:shadow-lg transition-all duration-200 group"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    <ChevronRight className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors" />
                   </button>
                 </div>
               </div>

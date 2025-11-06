@@ -388,10 +388,15 @@ class ApiClient {
   }
 
   // Attachments
+  async getTicketAttachments(ticketId: number): Promise<any[]> {
+    const response = await this.client.get(`/api/tickets/${ticketId}/attachments`);
+    return response.data;
+  }
+
   async uploadAttachment(ticketId: number, file: File): Promise<any> {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await this.client.post(`/api/attachments/upload?ticketId=${ticketId}`, formData, {
+    const response = await this.client.post(`/api/tickets/${ticketId}/attachments`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -404,6 +409,10 @@ class ApiClient {
       responseType: 'blob',
     });
     return response.data;
+  }
+
+  async downloadAttachment(id: number): Promise<Blob> {
+    return this.getAttachment(id);
   }
 
   // Knowledge Base

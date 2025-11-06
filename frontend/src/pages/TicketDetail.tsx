@@ -49,6 +49,10 @@ export default function TicketDetail() {
 
   const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([])
   const [currentSLA, setCurrentSLA] = useState<SLAPlan | null>(null)
+
+  // File preview
+  const [previewFile, setPreviewFile] = useState<{ url: string; type: string; name: string } | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
   const [showSLAEdit, setShowSLAEdit] = useState(false)
   const [selectedSLAPlanId, setSelectedSLAPlanId] = useState<number | undefined>()
 
@@ -194,6 +198,43 @@ export default function TicketDetail() {
       const errorMsg = e?.response?.data?.error || 'Durum güncellenemedi'
       toast.error(errorMsg)
     }
+  }
+
+  async function handlePreview(attachment: any) {
+    try {
+      const blob = await api.getAttachment(attachment.id)
+      const url = URL.createObjectURL(blob)
+      setPreviewFile({
+        url,
+        type: attachment.mimeType,
+        name: attachment.fileName
+      })
+      setShowPreview(true)
+    } catch (e: any) {
+      toast.error('Dosya önizlenemedi')
+      // Fallback to download
+      try {
+        const blob = await api.downloadAttachment(attachment.id)
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = attachment.fileName
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } catch (downloadErr: any) {
+        toast.error('Dosya indirilemedi')
+      }
+    }
+  }
+
+  function closePreview() {
+    if (previewFile?.url) {
+      URL.revokeObjectURL(previewFile.url)
+    }
+    setPreviewFile(null)
+    setShowPreview(false)
   }
 
   useEffect(() => {
@@ -472,6 +513,58 @@ export default function TicketDetail() {
         </div>
       </div>
 
+      {/* Attachments Section */}
+      {ticket.attachments && ticket.attachments.length > 0 && (
+        <div className="card">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
+            <Paperclip className="w-5 h-5 mr-2" />
+            Ekler ({ticket.attachments.length})
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ticket.attachments.map((attachment) => {
+              const isImage = attachment.mimeType.startsWith('image/')
+              const isPDF = attachment.mimeType === 'application/pdf'
+              const icon = isImage ? '🖼️' : isPDF ? '📄' : '📎'
+              
+              return (
+                <div
+                  key={attachment.id}
+                  className="glass hover-lift p-4 rounded-lg border border-gray-200 transition-all cursor-pointer"
+                  onClick={() => handlePreview(attachment)}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="text-3xl flex-shrink-0">{icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {attachment.fileName}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {(attachment.sizeBytes / 1024).toFixed(1)} KB
+                      </p>
+                      {attachment.scanStatus === 'Clean' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mt-2">
+                          ✓ Güvenli
+                        </span>
+                      )}
+                      {attachment.scanStatus === 'Pending' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 mt-2">
+                          ⏳ Taranıyor
+                        </span>
+                      )}
+                      {attachment.scanStatus === 'Quarantined' && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 mt-2">
+                          ⚠️ Karantinada
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
           <MessageSquare className="w-5 h-5 mr-2" />
@@ -606,6 +699,59 @@ export default function TicketDetail() {
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && previewFile && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
+          onClick={closePreview}
+        >
+          <div 
+            className="relative bg-white rounded-lg max-w-5xl max-h-[90vh] w-full overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 truncate">
+                {previewFile.name}
+              </h3>
+              <button
+                onClick={closePreview}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-4">
+              {previewFile.type.startsWith('image/') ? (
+                <img 
+                  src={previewFile.url} 
+                  alt={previewFile.name} 
+                  className="max-w-full h-auto mx-auto"
+                />
+              ) : previewFile.type === 'application/pdf' ? (
+                <iframe
+                  src={previewFile.url}
+                  className="w-full h-[70vh]"
+                  title={previewFile.name}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-4">
+                    Bu dosya türü önizlenemiyor
+                  </p>
+                  <a
+                    href={previewFile.url}
+                    download={previewFile.name}
+                    className="btn-primary inline-block"
+                  >
+                    📥 İndir
+                  </a>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

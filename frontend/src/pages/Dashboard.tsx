@@ -95,95 +95,109 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 relative overflow-hidden">
+      {/* Animated background blobs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-20 right-20 w-96 h-96 bg-gradient-to-br from-blue-300 to-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+        <div className="absolute bottom-20 left-20 w-96 h-96 bg-gradient-to-br from-purple-300 to-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-gradient-to-br from-indigo-300 to-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-10 border-b border-gray-200">
+      <header className="relative bg-white/70 backdrop-blur-xl shadow-lg sticky top-0 z-10 border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <LayoutDashboard className="text-white" size={24} />
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-xl transform hover:scale-110 transition-all duration-300 hover:rotate-6">
+                <LayoutDashboard className="text-white" size={28} />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">
-                  Hoş geldiniz, <span className="font-semibold text-primary-600">{user?.displayName || user?.username}</span>
+                <p className="text-sm text-gray-700 font-medium">
+                  Hoş geldiniz, <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{user?.displayName || user?.username}</span> 👋
                 </p>
               </div>
             </div>
-            <button onClick={logout} className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200">
+            <button 
+              onClick={logout} 
+              className="flex items-center gap-2 px-5 py-2.5 text-gray-700 hover:text-white hover:bg-gradient-to-r hover:from-red-500 hover:to-pink-500 rounded-xl transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 font-medium border-2 border-gray-200 hover:border-transparent"
+            >
               <LogOut size={18} />
-              <span className="font-medium">Çıkış</span>
+              <span>Çıkış</span>
             </button>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 mb-6 flex items-start animate-shake">
-            <AlertCircle size={20} className="mr-2 mt-0.5 flex-shrink-0" />
-            <span>{error}</span>
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-300 text-red-800 rounded-2xl p-5 mb-6 flex items-start animate-shake shadow-xl">
+            <AlertCircle size={24} className="mr-3 mt-0.5 flex-shrink-0 text-red-600" />
+            <span className="font-medium">{error}</span>
           </div>
         )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up">
+          <div className="glass bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl shadow-xl p-6 border-2 border-white/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 transform animate-slide-up">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Toplam Talep</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
+                <p className="text-sm font-bold text-indigo-700 uppercase tracking-wide">Toplam Talep</p>
+                <p className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent mt-2">
                   {stats?.total || stats?.totalTickets || 0}
                 </p>
+                <p className="text-xs text-gray-600 mt-1">Tüm talepler</p>
               </div>
-              <div className="bg-gradient-to-br from-primary-100 to-primary-200 p-4 rounded-xl">
-                <Ticket className="text-primary-600" size={28} />
+              <div className="bg-gradient-to-br from-indigo-500 to-blue-600 p-4 rounded-2xl shadow-lg transform hover:rotate-12 transition-transform duration-300">
+                <Ticket className="text-white" size={32} strokeWidth={2.5} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <div className="glass bg-gradient-to-br from-cyan-50 to-blue-100 rounded-2xl shadow-xl p-6 border-2 border-white/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 transform animate-slide-up" style={{ animationDelay: '0.1s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Açık Talep</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">
+                <p className="text-sm font-bold text-blue-700 uppercase tracking-wide">Açık Talep</p>
+                <p className="text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mt-2">
                   {stats?.openTickets || 0}
                 </p>
+                <p className="text-xs text-gray-600 mt-1">Bekleyen işlemler</p>
               </div>
-              <div className="bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-xl">
-                <AlertCircle className="text-blue-600" size={28} />
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-4 rounded-2xl shadow-lg transform hover:rotate-12 transition-transform duration-300">
+                <AlertCircle className="text-white" size={32} strokeWidth={2.5} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up" style={{ animationDelay: '0.2s' }}>
+          <div className="glass bg-gradient-to-br from-red-50 to-pink-100 rounded-2xl shadow-xl p-6 border-2 border-white/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 transform animate-slide-up" style={{ animationDelay: '0.2s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Geciken</p>
-                <p className="text-3xl font-bold text-red-600 mt-2">
+                <p className="text-sm font-bold text-red-700 uppercase tracking-wide">Geciken</p>
+                <p className="text-4xl font-black bg-gradient-to-r from-red-600 to-pink-600 bg-clip-text text-transparent mt-2">
                   {stats?.overdueTickets || 0}
                 </p>
+                <p className="text-xs text-gray-600 mt-1">Acil müdahale</p>
               </div>
-              <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-xl">
-                <Clock className="text-red-600" size={28} />
+              <div className="bg-gradient-to-br from-red-500 to-pink-600 p-4 rounded-2xl shadow-lg transform hover:rotate-12 transition-transform duration-300 animate-pulse-slow">
+                <Clock className="text-white" size={32} strokeWidth={2.5} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+          <div className="glass bg-gradient-to-br from-green-50 to-emerald-100 rounded-2xl shadow-xl p-6 border-2 border-white/50 hover:shadow-2xl hover:scale-105 transition-all duration-300 transform animate-slide-up" style={{ animationDelay: '0.3s' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">SLA Uyum</p>
-                <p className="text-3xl font-bold text-green-600 mt-2">
+                <p className="text-sm font-bold text-green-700 uppercase tracking-wide">SLA Uyum</p>
+                <p className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mt-2">
                   {stats?.slaComplianceRate ? `${Math.round(stats.slaComplianceRate)}%` : 'N/A'}
                 </p>
+                <p className="text-xs text-gray-600 mt-1">Performans skoru</p>
               </div>
-              <div className="bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-xl">
-                <TrendingUp className="text-green-600" size={28} />
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-4 rounded-2xl shadow-lg transform hover:rotate-12 transition-transform duration-300">
+                <TrendingUp className="text-white" size={32} strokeWidth={2.5} />
               </div>
             </div>
           </div>
@@ -191,31 +205,42 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 animate-fade-in">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Plus className="text-primary-600" size={20} />
-              Hızlı İşlemler
+          <div className="glass bg-white/80 rounded-2xl shadow-xl p-6 border-2 border-white/50 animate-fade-in backdrop-blur-xl">
+            <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
+                <Plus className="text-white" size={22} />
+              </div>
+              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Hızlı İşlemler</span>
             </h2>
             <div className="space-y-3">
               <Link 
                 to="/tickets/create" 
-                className="flex items-center gap-3 w-full px-4 py-3 bg-gradient-to-r from-primary-600 to-purple-600 hover:from-primary-700 hover:to-purple-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]"
+                className="group flex items-center gap-4 w-full px-5 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-red-500 hover:from-purple-700 hover:via-pink-700 hover:to-red-600 text-white rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
               >
-                <Plus size={20} />
-                <span className="font-medium">Yeni Talep Oluştur</span>
+                <div className="p-2 bg-white/20 rounded-lg group-hover:bg-white/30 transition-all">
+                  <Plus size={24} strokeWidth={2.5} />
+                </div>
+                <span className="font-bold text-lg">Yeni Talep Oluştur</span>
               </Link>
               <Link 
                 to="/tickets" 
-                className="flex items-center gap-3 w-full px-4 py-3 bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 transform hover:scale-[1.02]"
+                className="group flex items-center gap-4 w-full px-5 py-4 bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100 hover:from-blue-200 hover:via-indigo-200 hover:to-purple-200 text-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-105 border-2 border-blue-200 hover:border-purple-300"
               >
-                <Ticket size={20} />
-                <span className="font-medium">Tüm Talepleri Görüntüle</span>
+                <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-md group-hover:scale-110 transition-transform">
+                  <Ticket size={24} className="text-white" strokeWidth={2.5} />
+                </div>
+                <span className="font-bold text-lg">Tüm Talepleri Görüntüle</span>
               </Link>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Durum Dağılımı</h2>
+          <div className="glass bg-white/80 rounded-2xl shadow-xl p-6 border-2 border-white/50 animate-fade-in backdrop-blur-xl" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-xl shadow-lg">
+                <Ticket className="text-white" size={22} />
+              </div>
+              <span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">Durum Dağılımı</span>
+            </h2>
             <div className="space-y-3">
               {stats?.byStatus && (Array.isArray(stats.byStatus) 
                 ? stats.byStatus.map((item: any) => {
