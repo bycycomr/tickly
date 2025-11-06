@@ -38,7 +38,9 @@ namespace Tickly.Api.Controllers
 
         private string? GetUserId()
         {
-            return User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            // .NET maps "sub" claim to ClaimTypes.NameIdentifier
+            return User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         }
 
         [HttpGet]

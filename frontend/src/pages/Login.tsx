@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, AlertCircle } from 'lucide-react';
 
@@ -23,9 +24,12 @@ export default function Login() {
     try {
       setLoading(true);
       await login(username, password);
+      toast.success('Giriş başarılı! Hoş geldiniz.');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+      const errorMsg = err?.response?.data?.error || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -36,10 +36,10 @@ const statusColors: Record<number, string> = {
 }
 
 const priorityColors: Record<number, string> = {
-  0: 'bg-gray-100 text-gray-800',
-  1: 'bg-blue-100 text-blue-800',
-  2: 'bg-orange-100 text-orange-800',
-  3: 'bg-red-100 text-red-800'
+  0: 'bg-gray-200 text-gray-700',
+  1: 'bg-blue-100 text-blue-700',
+  2: 'bg-orange-200 text-orange-800',
+  3: 'bg-red-500 text-white font-bold animate-pulse'
 }
 
 export default function TicketList() {
@@ -173,7 +173,8 @@ export default function TicketList() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
@@ -238,15 +239,54 @@ export default function TicketList() {
               </table>
             </div>
 
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {paginatedTickets.map(ticket => (
+                <div
+                  key={ticket.id}
+                  onClick={() => navigate(`/tickets/${ticket.id}`)}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-sm font-medium text-gray-500">#{ticket.id}</span>
+                        <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${priorityColors[ticket.priority]}`}>
+                          {priorityMap[ticket.priority]}
+                        </span>
+                      </div>
+                      <h3 className="font-semibold text-gray-900 mb-1">{ticket.title}</h3>
+                      {ticket.description && (
+                        <p className="text-sm text-gray-600 line-clamp-2">
+                          {ticket.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${statusColors[ticket.status]}`}>
+                      {statusMap[ticket.status]}
+                    </span>
+                    <div className="text-xs text-gray-500">
+                      {new Date(ticket.createdAt).toLocaleDateString('tr-TR')}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500">
+                    Oluşturan: {ticket.creatorId}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
-                <div className="text-sm text-gray-700">
+              <div className="flex flex-col sm:flex-row items-center justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
+                <div className="text-sm text-gray-700 text-center sm:text-left">
                   <span className="font-medium">{startIndex + 1}</span>
                   {' - '}
                   <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredTickets.length)}</span>
                   {' / '}
                   <span className="font-medium">{filteredTickets.length}</span>
-                  {' talep gösteriliyor'}
+                  {' talep'}
                 </div>
                 <div className="flex space-x-2">
                   <button

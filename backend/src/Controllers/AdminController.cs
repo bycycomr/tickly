@@ -38,6 +38,105 @@ namespace Tickly.Api.Controllers
             return Ok(d);
         }
 
+        [HttpDelete("departments/{id}")]
+        public IActionResult DeleteDepartment(int id)
+        {
+            var dept = _db.Departments.Find(id);
+            if (dept == null) return NotFound(new { error = "Department not found" });
+            
+            // Check if department has users
+            var hasUsers = _db.RoleAssignments.Any(r => r.DepartmentId == id);
+            if (hasUsers)
+                return BadRequest(new { error = "Cannot delete department with assigned users" });
+            
+            _db.Departments.Remove(dept);
+            _db.SaveChanges();
+            return Ok(new { message = "Department deleted successfully" });
+        }
+
+        // User Management
+        [HttpGet("users")]
+        public IActionResult GetUsers()
+        {
+            var users = _db.Users
+                .Select(u => new
+                {
+                    u.Id,
+                    u.Username,
+                    u.Email,
+                    u.DisplayName,
+                    u.Status,
+                    u.DepartmentId,
+                    u.CreatedAt,
+                    Roles = _db.RoleAssignments
+                        .Where(r => r.UserId == u.Id)
+                        .Select(r => r.Role.ToString())
+                        .ToList()
+                })
+                .ToList();
+            return Ok(users);
+        }
+
+        [HttpGet("users/{id}")]
+        public IActionResult GetUser(string id)
+        {
+            var user = _db.Users.Find(id);
+            if (user == null) return NotFound(new { error = "User not found" });
+            
+            var roles = _db.RoleAssignments.Where(r => r.UserId == id).ToList();
+            
+            return Ok(new
+            {
+                user.Id,
+                user.Username,
+                user.Email,
+                user.DisplayName,
+                user.Status,
+                user.DepartmentId,
+                user.CreatedAt,
+                Roles = roles
+            });
+        }
+
+        [HttpPut("users/{id}")]
+        public IActionResult UpdateUser(string id, [FromBody] UpdateUserDto dto)
+        {
+            var user = _db.Users.Find(id);
+            if (user == null) return NotFound(new { error = "User not found" });
+            
+            if (!string.IsNullOrWhiteSpace(dto.DisplayName))
+                user.DisplayName = dto.DisplayName;
+            
+            if (!string.IsNullOrWhiteSpace(dto.Email))
+                user.Email = dto.Email;
+            
+            if (dto.DepartmentId.HasValue)
+                user.DepartmentId = dto.DepartmentId.Value;
+            
+            if (dto.Status.HasValue)
+                user.Status = dto.Status.Value;
+            
+            _db.SaveChanges();
+            return Ok(user);
+        }
+
+        [HttpDelete("users/{id}")]
+        public IActionResult DeleteUser(string id)
+        {
+            var user = _db.Users.Find(id);
+            if (user == null) return NotFound(new { error = "User not found" });
+            
+            // Remove role assignments
+            var roles = _db.RoleAssignments.Where(r => r.UserId == id).ToList();
+            _db.RoleAssignments.RemoveRange(roles);
+            
+            // Don't actually delete, just archive
+            user.Status = UserStatus.Archived;
+            _db.SaveChanges();
+            
+            return Ok(new { message = "User archived successfully" });
+        }
+
         [HttpGet("departments/{id}/members")]
         public IActionResult GetDepartmentMembers(int id)
         {
@@ -384,6 +483,14 @@ namespace Tickly.Api.Controllers
 
     public class CreateDepartmentDto { public string Name { get; set; } = null!; public string? Description { get; set; } }
     public class AssignRoleDto { public string UserId { get; set; } = null!; public string Role { get; set; } = null!; }
+    
+    public class UpdateUserDto
+    {
+        public string? DisplayName { get; set; }
+        public string? Email { get; set; }
+        public int? DepartmentId { get; set; }
+        public UserStatus? Status { get; set; }
+    }
     
     public class CreateSLAPlanDto
     {

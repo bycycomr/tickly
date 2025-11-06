@@ -34,7 +34,8 @@ namespace Tickly.Api.Controllers
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(ClaimTypes.Name, user.Username)
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("tenant_id", user.TenantId.ToString())
             };
 
             var roles = _db.RoleAssignments.Where(r => r.UserId == user.Id).ToList();
@@ -87,7 +88,8 @@ namespace Tickly.Api.Controllers
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(ClaimTypes.Name, user.Username)
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("tenant_id", user.TenantId.ToString())
             };
             
             var token = GenerateToken(claims);

@@ -87,6 +87,26 @@ builder.Services.AddAuthentication(options =>
 		ValidAudience = jwtAudience,
 		IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey))
 	};
+	
+	// Debug: Log token validation failures
+	options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+	{
+		OnAuthenticationFailed = context =>
+		{
+			Console.WriteLine($"JWT Auth Failed: {context.Exception.Message}");
+			return System.Threading.Tasks.Task.CompletedTask;
+		},
+		OnTokenValidated = context =>
+		{
+			Console.WriteLine($"JWT Token Validated for: {context.Principal?.Identity?.Name}");
+			return System.Threading.Tasks.Task.CompletedTask;
+		},
+		OnChallenge = context =>
+		{
+			Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
+			return System.Threading.Tasks.Task.CompletedTask;
+		}
+	};
 });
 
 // Authorization policies

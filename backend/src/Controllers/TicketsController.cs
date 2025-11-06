@@ -32,7 +32,9 @@ namespace Tickly.Api.Controllers
         // Helper: get user id from token (sub)
         private string? GetUserId()
         {
-            return User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            // .NET maps "sub" claim to ClaimTypes.NameIdentifier
+            return User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
         }
 
         // Helper: parse dept_role claims formatted as "{departmentId}:{RoleName}"
@@ -66,6 +68,12 @@ namespace Tickly.Api.Controllers
             // - Users with no dept roles: tickets assigned to them
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
+
+            if (IsSuperAdmin())
+            {
+                var all = await _db.Tickets.OrderByDescending(t => t.CreatedAt).ToListAsync();
+                return Ok(all);
+            }
 
             if (IsSuperAdmin())
             {

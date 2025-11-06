@@ -1,4 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
+import toast from 'react-hot-toast';
 import type {
   LoginRequest,
   LoginResponse,
@@ -14,6 +15,20 @@ import type {
 } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+// Helper function to get user-friendly error message
+function getErrorMessage(error: any): string {
+  if (error.response?.data?.error) {
+    return error.response.data.error;
+  }
+  if (error.response?.data?.message) {
+    return error.response.data.message;
+  }
+  if (error.message) {
+    return error.message;
+  }
+  return 'Bir hata oluştu. Lütfen tekrar deneyin.';
+}
 
 class ApiClient {
   private client: AxiosInstance;
@@ -39,14 +54,32 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
+        const errorMsg = getErrorMessage(error);
+        
         if (error.response?.status === 401) {
           // Only redirect to login if not already there
           if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            toast.error('Oturum süresi doldu. Lütfen tekrar giriş yapın.');
             window.location.href = '/login';
           }
+        } else if (error.response?.status === 403) {
+          toast.error('Bu işlem için yetkiniz yok.');
+        } else if (error.response?.status === 404) {
+          toast.error('İstenen kaynak bulunamadı.');
+        } else if (error.response?.status === 500) {
+          toast.error('Sunucu hatası oluştu. Lütfen daha sonra tekrar deneyin.');
+        } else if (error.code === 'ERR_NETWORK') {
+          toast.error('Bağlantı hatası. Lütfen internet bağlantınızı kontrol edin.');
+        } else {
+          // Don't show toast for errors that will be handled by the calling code
+          // Only show generic errors
+          if (!error.config?.__skipToast) {
+            toast.error(errorMsg);
+          }
         }
+        
         return Promise.reject(error);
       }
     );
@@ -159,6 +192,26 @@ class ApiClient {
 
   async deleteDepartment(id: number): Promise<void> {
     await this.client.delete(`/api/admin/departments/${id}`);
+  }
+
+  // Admin - Users
+  async getUsers(): Promise<any[]> {
+    const response = await this.client.get('/api/admin/users');
+    return response.data;
+  }
+
+  async getUser(id: string): Promise<any> {
+    const response = await this.client.get(`/api/admin/users/${id}`);
+    return response.data;
+  }
+
+  async updateUser(id: string, data: any): Promise<any> {
+    const response = await this.client.put(`/api/admin/users/${id}`, data);
+    return response.data;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await this.client.delete(`/api/admin/users/${id}`);
   }
 
   async getDepartmentMembers(id: number): Promise<any[]> {

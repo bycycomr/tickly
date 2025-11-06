@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { ArrowLeft, Clock, User, Tag, AlertCircle, MessageSquare, Paperclip } from 'lucide-react'
 import api from '../lib/api'
 import { Ticket, TicketEvent } from '../lib/types'
@@ -23,8 +24,8 @@ const statusColors: Record<number, string> = {
 }
 
 const priorityColors: Record<number, string> = {
-  0: 'bg-gray-100 text-gray-800', 1: 'bg-blue-100 text-blue-800',
-  2: 'bg-orange-100 text-orange-800', 3: 'bg-red-100 text-red-800'
+  0: 'bg-gray-200 text-gray-700', 1: 'bg-blue-100 text-blue-700',
+  2: 'bg-orange-200 text-orange-800', 3: 'bg-red-500 text-white font-bold'
 }
 
 export default function TicketDetail() {
@@ -38,7 +39,12 @@ export default function TicketDetail() {
   const [error, setError] = useState<string | null>(null)
   
   const [comment, setComment] = useState('')
+  const [isInternalComment, setIsInternalComment] = useState(false)
   const [addingComment, setAddingComment] = useState(false)
+
+  const [staffMembers, setStaffMembers] = useState<any[]>([])
+  const [selectedAssignee, setSelectedAssignee] = useState('')
+  const [assigning, setAssigning] = useState(false)
 
   async function loadTicket() {
     if (!id) return
@@ -65,16 +71,46 @@ export default function TicketDetail() {
     }
   }
 
+  async function loadStaffMembers() {
+    if (!ticket?.departmentId) return
+    try {
+      const members = await api.getDepartmentMembers(ticket.departmentId)
+      setStaffMembers(members)
+    } catch (e) {
+      console.error('Failed to load staff:', e)
+    }
+  }
+
+  async function handleAssign() {
+    if (!selectedAssignee || !id) return
+    setAssigning(true)
+    try {
+      await api.assignTicket(Number(id), selectedAssignee)
+      await loadTicket()
+      await loadEvents()
+      setSelectedAssignee('')
+      toast.success('Ticket başarıyla atandı')
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e?.response?.data?.error || 'Atama başarısız')
+    } finally {
+      setAssigning(false)
+    }
+  }
+
   async function handleAddComment() {
     if (!comment.trim() || !id) return
     setAddingComment(true)
     try {
-      await api.addComment(Number(id), comment, false)
+      await api.addComment(Number(id), comment, isInternalComment)
       setComment('')
+      setIsInternalComment(false)
       await loadEvents()
+      toast.success('Yorum başarıyla eklendi')
     } catch (e: any) {
       console.error(e)
-      alert(e?.response?.data?.error || 'Yorum eklenemedi')
+      const errorMsg = e?.response?.data?.error || 'Yorum eklenemedi'
+      toast.error(errorMsg)
     } finally {
       setAddingComment(false)
     }
@@ -86,16 +122,26 @@ export default function TicketDetail() {
       await api.transitionTicketStatus(Number(id), newStatus)
       await loadTicket()
       await loadEvents()
+      toast.success(`Durum ${statusMap[newStatus]} olarak güncellendi`)
     } catch (e: any) {
       console.error(e)
-      alert(e?.response?.data?.error || 'Durum güncellenemedi')
+      const errorMsg = e?.response?.data?.error || 'Durum güncellenemedi'
+      toast.error(errorMsg)
     }
   }
 
   useEffect(() => {
     loadTicket()
-    loadEvents()
   }, [id])
+
+  useEffect(() => {
+    if (ticket) {
+      loadEvents()
+      if (ticket.departmentId) {
+        loadStaffMembers()
+      }
+    }
+  }, [ticket])
 
   if (loading) {
     return (
@@ -118,51 +164,52 @@ export default function TicketDetail() {
   }
 
   return (
-    <div className="space-y-6">
-      <button onClick={() => navigate('/tickets')} className="flex items-center text-gray-600 hover:text-gray-900">
-        <ArrowLeft className="w-5 h-5 mr-2" />
-        Taleplere Dön
+    <div className="space-y-4 sm:space-y-6">
+      <button onClick={() => navigate('/tickets')} className="flex items-center text-gray-600 hover:text-gray-900 transition">
+        <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+        <span className="text-sm sm:text-base">Taleplere Dön</span>
       </button>
 
       <div className="card">
-        <div className="flex items-start justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
           <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h1 className="text-2xl font-bold text-gray-900">#{ticket.id} - {ticket.title}</h1>
-              <span className={`px-3 py-1 text-sm font-semibold rounded-full ${statusColors[ticket.status]}`}>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">#{ticket.id}</h1>
+              <span className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-full ${statusColors[ticket.status]}`}>
                 {statusMap[ticket.status]}
               </span>
-              <span className={`px-3 py-1 text-sm font-semibold rounded-full ${priorityColors[ticket.priority]}`}>
+              <span className={`px-2 sm:px-3 py-1 text-xs sm:text-sm font-semibold rounded-full ${priorityColors[ticket.priority]}`}>
                 {priorityMap[ticket.priority]}
               </span>
             </div>
+            <h2 className="text-base sm:text-lg font-semibold text-gray-800 mb-2">{ticket.title}</h2>
             {ticket.description && (
-              <p className="text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
+              <p className="text-sm sm:text-base text-gray-700 whitespace-pre-wrap">{ticket.description}</p>
             )}
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-gray-200">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-2 text-sm">
-            <User className="w-4 h-4 text-gray-400" />
+            <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <span className="text-gray-600">Oluşturan:</span>
-            <span className="font-medium">{ticket.creatorId}</span>
+            <span className="font-medium truncate">{ticket.creatorId}</span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
-            <Clock className="w-4 h-4 text-gray-400" />
+            <Clock className="w-4 h-4 text-gray-400 flex-shrink-0" />
             <span className="text-gray-600">Oluşturma:</span>
             <span className="font-medium">{new Date(ticket.createdAt).toLocaleDateString('tr-TR')}</span>
           </div>
           {ticket.assignedToUserId && (
             <div className="flex items-center space-x-2 text-sm">
-              <User className="w-4 h-4 text-gray-400" />
+              <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Atanan:</span>
-              <span className="font-medium">{ticket.assignedToUserId}</span>
+              <span className="font-medium truncate">{ticket.assignedToUserId}</span>
             </div>
           )}
           {ticket.dueAt && (
             <div className="flex items-center space-x-2 text-sm">
-              <AlertCircle className="w-4 h-4 text-gray-400" />
+              <AlertCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <span className="text-gray-600">Son Tarih:</span>
               <span className="font-medium">{new Date(ticket.dueAt).toLocaleDateString('tr-TR')}</span>
             </div>
@@ -170,14 +217,14 @@ export default function TicketDetail() {
         </div>
 
         <div className="pt-4 border-t border-gray-200 mt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Durum Değiştir</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Durum Değiştir</h3>
           <div className="flex flex-wrap gap-2">
             {[0, 1, 2, 3, 4, 5].map(status => (
               <button
                 key={status}
                 onClick={() => handleStatusChange(status)}
                 disabled={ticket.status === status}
-                className={`px-3 py-1 text-sm rounded ${
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition ${
                   ticket.status === status
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : 'btn-secondary'
@@ -188,6 +235,34 @@ export default function TicketDetail() {
             ))}
           </div>
         </div>
+
+        {ticket.departmentId && staffMembers.length > 0 && (
+          <div className="pt-4 border-t border-gray-200 mt-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Ticket'ı Ata</h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <select
+                value={selectedAssignee}
+                onChange={(e) => setSelectedAssignee(e.target.value)}
+                className="input flex-1"
+                disabled={assigning}
+              >
+                <option value="">-- Kullanıcı Seç --</option>
+                {staffMembers.map(member => (
+                  <option key={member.id} value={member.id}>
+                    {member.displayName || member.username} ({member.role})
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={handleAssign}
+                disabled={!selectedAssignee || assigning}
+                className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {assigning ? 'Atanıyor...' : 'Ata'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -196,45 +271,130 @@ export default function TicketDetail() {
           Yorumlar ve Aktiviteler
         </h2>
 
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
           {events.length === 0 ? (
             <p className="text-gray-500 text-sm">Henüz aktivite bulunmuyor.</p>
           ) : (
-            events.map(event => (
-              <div key={event.id} className="border-l-2 border-gray-200 pl-4">
-                <div className="text-sm text-gray-600 mb-1">
-                  <span className="font-medium">{event.actorId}</span>
-                  {' · '}
-                  <span className="text-gray-400">{new Date(event.createdAt).toLocaleString('tr-TR')}</span>
-                  {' · '}
-                  <span className="text-gray-500">{event.type}</span>
-                </div>
-                {event.payloadJson && (
-                  <div className="text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                    {JSON.parse(event.payloadJson).message || event.payloadJson}
+            events.map(event => {
+              let payload: any = {};
+              try {
+                payload = event.payloadJson ? JSON.parse(event.payloadJson) : {};
+              } catch (e) {
+                payload = { raw: event.payloadJson };
+              }
+
+              const isComment = event.type.includes('Comment');
+              const isStatusChange = event.type === 'StatusChange';
+              const isAssignment = event.type === 'Assignment';
+              const isInternal = event.visibility === 'Internal';
+
+              return (
+                <div 
+                  key={event.id} 
+                  className={`border-l-4 pl-4 py-2 ${
+                    isComment ? (isInternal ? 'border-orange-400 bg-orange-50' : 'border-blue-400 bg-blue-50') : 
+                    isStatusChange ? 'border-green-400 bg-green-50' : 
+                    isAssignment ? 'border-purple-400 bg-purple-50' : 
+                    'border-gray-300 bg-gray-50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm text-gray-600 mb-1">
+                        <span className="font-semibold text-gray-900">{event.actorId}</span>
+                        {isComment && !isInternal && <span className="text-blue-600 ml-2">💬 yorum ekledi</span>}
+                        {isComment && isInternal && <span className="text-orange-600 ml-2">🔒 dahili yorum ekledi</span>}
+                        {isStatusChange && <span className="text-green-600 ml-2">🔄 durumu değiştirdi</span>}
+                        {isAssignment && <span className="text-purple-600 ml-2">👤 atama yaptı</span>}
+                        {!isComment && !isStatusChange && !isAssignment && (
+                          <span className="text-gray-500 ml-2">• {event.type}</span>
+                        )}
+                      </div>
+                      {(payload.text || payload.message || payload.note || payload.comment) && (
+                        <div className="text-sm text-gray-800 mt-2 p-3 bg-white rounded border border-gray-200 whitespace-pre-wrap">
+                          {payload.text || payload.message || payload.note || payload.comment}
+                        </div>
+                      )}
+                      {payload.from !== undefined && payload.to !== undefined && isStatusChange && (
+                        <div className="text-sm text-gray-700 mt-1">
+                          <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs mr-1">
+                            {payload.from}
+                          </span>
+                          →
+                          <span className="inline-block px-2 py-0.5 bg-gray-200 rounded text-xs ml-1">
+                            {payload.to}
+                          </span>
+                        </div>
+                      )}
+                      {payload.from !== undefined && payload.to !== undefined && isAssignment && (
+                        <div className="text-sm text-gray-700 mt-1">
+                          {payload.from ? (
+                            <>
+                              <span className="font-medium">{payload.from}</span>
+                              {' → '}
+                              <span className="font-medium">{payload.to}</span>
+                            </>
+                          ) : (
+                            <>
+                              Atanan: <span className="font-medium">{payload.to}</span>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 ml-4 whitespace-nowrap">
+                      {new Date(event.createdAt).toLocaleString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
                   </div>
-                )}
-              </div>
-            ))
+                </div>
+              );
+            })
           )}
         </div>
 
         <div className="border-t border-gray-200 pt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-2">Yorum Ekle</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+            <MessageSquare className="w-4 h-4 mr-2" />
+            Yeni Yorum Ekle
+          </h3>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Yorumunuzu yazın..."
-            rows={3}
-            className="input mb-2"
+            placeholder="Yorumunuzu buraya yazın..."
+            rows={4}
+            className="input mb-3 resize-none"
           />
-          <button
-            onClick={handleAddComment}
-            disabled={!comment.trim() || addingComment}
-            className="btn-primary disabled:opacity-50"
-          >
-            {addingComment ? 'Ekleniyor...' : 'Yorum Ekle'}
-          </button>
+          <div className="flex items-center justify-between">
+            <label className="flex items-center text-sm text-gray-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isInternalComment}
+                onChange={(e) => setIsInternalComment(e.target.checked)}
+                className="mr-2 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+              />
+              🔒 Dahili Yorum (Sadece ekip üyeleri görebilir)
+            </label>
+            <button
+              onClick={handleAddComment}
+              disabled={!comment.trim() || addingComment}
+              className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {addingComment ? (
+                <span className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Ekleniyor...
+                </span>
+              ) : (
+                'Yorum Ekle'
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

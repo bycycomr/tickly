@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { ArrowLeft, Send, AlertCircle } from 'lucide-react';
 import type { Category, Department } from '../lib/types';
@@ -42,12 +43,13 @@ export default function TicketCreate() {
 
     if (!title.trim()) {
       setError('Başlık gereklidir');
+      toast.error('Başlık gereklidir');
       return;
     }
 
     try {
       setSaving(true);
-      await api.createTicket({
+      const ticket = await api.createTicket({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
@@ -56,9 +58,12 @@ export default function TicketCreate() {
         status: 0, // Open
         channel: 2, // Web
       });
-      navigate('/tickets');
+      toast.success('Talep başarıyla oluşturuldu!');
+      navigate(`/tickets/${ticket.id}`);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Ticket oluşturulurken hata oluştu');
+      const errorMsg = err?.response?.data?.error || 'Ticket oluşturulurken hata oluştu';
+      setError(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setSaving(false);
     }

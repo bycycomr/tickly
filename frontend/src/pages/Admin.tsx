@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { Building2, Plus, Users, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
 import type { Department } from '../lib/types';
@@ -36,8 +37,9 @@ export default function Admin() {
 
   useEffect(() => {
     loadDepartments();
+    loadUsers(); // Her zaman yükle, kullanıcı dropdown için gerekli
     if (activeTab === 'users') {
-      loadUsers();
+      // Kullanıcılar tabındayken zaten yüklenecek
     }
   }, [activeTab]);
 
@@ -72,10 +74,13 @@ export default function Admin() {
       setDepartments((prev) => [...prev, dept]);
       setNewName('');
       setNewDesc('');
+      toast.success('Departman başarıyla oluşturuldu');
       setSuccess('Departman basariyla olusturuldu');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Departman olusturulamadi');
+      const errorMsg = err?.response?.data?.error || 'Departman oluşturulamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   }
 
@@ -90,10 +95,13 @@ export default function Admin() {
     try {
       await api.deleteDepartment(deptId);
       setDepartments((prev) => prev.filter(d => d.id !== deptId));
+      toast.success('Departman başarıyla silindi');
       setSuccess('Departman başarıyla silindi');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Departman silinemedi');
+      const errorMsg = err?.response?.data?.error || 'Departman silinemedi';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   }
 
@@ -114,17 +122,43 @@ export default function Admin() {
 
     if (!assignUserId.trim()) {
       setError('Kullanici ID gereklidir');
+      toast.error('Kullanıcı seçiniz');
       return;
     }
 
     try {
       await api.assignDepartmentRole(deptId, assignUserId.trim(), assignRole);
+      toast.success('Rol basariyla atandi');
       setSuccess('Rol basariyla atandi');
       setAssignUserId('');
       loadMembers(deptId);
+      loadUsers(); // Kullanıcı listesini güncelle
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Rol atamasi basarisiz');
+      const errorMsg = err?.response?.data?.message || 'Rol atamasi basarisiz';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  async function handleDeleteUser(userId: string) {
+    if (!confirm('Bu kullanıcıyı arşivlemek istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    try {
+      await api.deleteUser(userId);
+      toast.success('Kullanıcı başarıyla arşivlendi');
+      setSuccess('Kullanıcı başarıyla arşivlendi');
+      loadUsers();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Kullanıcı arşivlenemedi';
+      setError(errorMsg);
+      toast.error(errorMsg);
     }
   }
 
@@ -176,11 +210,11 @@ export default function Admin() {
   async function loadUsers() {
     setLoadingUsers(true);
     try {
-      // Backend'de user listesi endpoint'i yok, şimdilik boş bırakıyoruz
-      // İlerleye eklenebilir
-      setUsers([]);
+      const userList = await api.getUsers();
+      setUsers(userList);
     } catch (err) {
       console.error('Kullanıcılar yüklenemedi', err);
+      toast.error('Kullanıcılar yüklenemedi');
     } finally {
       setLoadingUsers(false);
     }
@@ -361,16 +395,21 @@ export default function Admin() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label htmlFor={`userId-${dept.id}`} className="label">
-                            Kullanici ID
+                            Kullanıcı Seçin
                           </label>
-                          <input
+                          <select
                             id={`userId-${dept.id}`}
-                            type="text"
                             value={assignUserId}
                             onChange={(e) => setAssignUserId(e.target.value)}
-                            className="input"
-                            placeholder="Kullanici ID girin"
-                          />
+                            className="select"
+                          >
+                            <option value="">Kullanıcı seçiniz...</option>
+                            {users.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.displayName} ({user.username})
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <label htmlFor={`role-${dept.id}`} className="label">
@@ -391,6 +430,7 @@ export default function Admin() {
                           <button
                             onClick={() => assignUser(dept.id)}
                             className="btn btn-primary w-full"
+                            disabled={!assignUserId}
                           >
                             <UserPlus size={18} className="mr-2" />
                             Ata
@@ -511,7 +551,76 @@ export default function Admin() {
 
           <div className="card">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">Kullanıcı Yönetimi</h3>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            
+            {loadingUsers ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+              </div>
+            ) : users.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Henüz kullanıcı bulunmuyor. Yukarıdaki formu kullanarak kullanıcı oluşturun.
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Ad Soyad</th>
+                      <th>Kullanıcı Adı</th>
+                      <th>Email</th>
+                      <th>Departman</th>
+                      <th>Roller</th>
+                      <th>Durum</th>
+                      <th>İşlemler</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((user) => {
+                      const userDept = departments.find(d => d.id === user.departmentId);
+                      return (
+                        <tr key={user.id}>
+                          <td className="font-medium">{user.displayName}</td>
+                          <td className="text-sm text-gray-600">{user.username}</td>
+                          <td className="text-sm text-gray-600">{user.email}</td>
+                          <td className="text-sm">{userDept?.name || '—'}</td>
+                          <td>
+                            {user.roles && user.roles.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {user.roles.map((role: string, idx: number) => (
+                                  <span key={idx} className="badge badge-info text-xs">
+                                    {role}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className={`badge ${user.status === 'Active' ? 'badge-success' : 'badge-warning'}`}>
+                              {user.status}
+                            </span>
+                          </td>
+                          <td>
+                            {user.status === 'Active' && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-red-600 hover:text-red-800 text-sm flex items-center"
+                              >
+                                <Trash2 size={16} className="mr-1" />
+                                Arşivle
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
               <div className="flex items-start">
                 <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
@@ -521,7 +630,7 @@ export default function Admin() {
                     <li>İlgili departmanı seçip <strong>"Üyeleri Göster"</strong> butonuna tıklayın</li>
                     <li>En altta <strong>"Kullanıcı Ata"</strong> bölümünden:
                       <ul className="list-disc list-inside ml-4 mt-1">
-                        <li>Kullanıcının ID'sini girin (username)</li>
+                        <li>Kullanıcıyı dropdown'dan seçin</li>
                         <li>Rol seçin (Departman Yöneticisi, Çalışan, veya Son Kullanıcı)</li>
                         <li><strong>"Ata"</strong> butonuna tıklayın</li>
                       </ul>
