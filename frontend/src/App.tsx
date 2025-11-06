@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import DepartmentManager from './pages/DepartmentManager';
 import Reports from './pages/Reports';
 import KnowledgeBase from './pages/KnowledgeBase';
 import ArticleDetail from './pages/ArticleDetail';
@@ -52,6 +53,11 @@ function Header() {
                 {(user.roles?.includes('SuperAdmin') || user.roles?.includes('DepartmentManager')) && (
                   <Link to="/reports" className="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-medium transition-all">
                     Raporlar
+                  </Link>
+                )}
+                {user.roles?.includes('DepartmentManager') && (
+                  <Link to="/department" className="text-blue-700 hover:text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-semibold transition-all">
+                    Departman
                   </Link>
                 )}
                 {user.roles?.includes('SuperAdmin') && (
@@ -131,6 +137,15 @@ function Header() {
                 className="block px-4 py-2.5 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all"
               >
                 Raporlar
+              </Link>
+            )}
+            {user.roles?.includes('DepartmentManager') && (
+              <Link
+                to="/department"
+                onClick={() => setMobileOpen(false)}
+                className="block px-4 py-2.5 rounded-lg text-base font-semibold text-blue-700 hover:text-blue-800 hover:bg-blue-50 transition-all"
+              >
+                Departman
               </Link>
             )}
             {user.roles?.includes('SuperAdmin') && (
@@ -238,6 +253,14 @@ export default function App() {
                 element={
                   <ProtectedRoute requireRole="SuperAdmin">
                     <Admin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/department"
+                element={
+                  <ProtectedRoute requireRole="DepartmentManager">
+                    <DepartmentManager />
                   </ProtectedRoute>
                 }
               />
