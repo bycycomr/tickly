@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System.Threading;
 using Tickly.Api.Configuration;
 using Tickly.Api.Data;
+using System;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,16 +34,30 @@ builder.Services.AddHostedService<Tickly.Api.Services.SLAMonitorWorker>();
 // Database configuration
 builder.Services.Configure<DatabaseSettings>(configuration.GetSection("Database"));
 
-// DbContext - PostgreSQL connection string from configuration (see appsettings.json)
-var conn = configuration.GetConnectionString("DefaultConnection") ?? "Host=localhost;Database=tickly_db;Username=tickly_app;Password=tickly_app;SearchPath=tickly_app,public";
+// DbContext - SQLite connection string from configuration (see appsettings.json)
+var conn = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=tickly.db";
+var dbProvider = configuration["Database:Provider"] ?? "Sqlite";
+
 builder.Services.AddDbContextPool<AppDbContext>((serviceProvider, options) =>
 {
 	var settings = serviceProvider.GetRequiredService<IOptions<DatabaseSettings>>().Value;
-	options.UseNpgsql(conn, npgsqlOptions =>
+	
+	if (dbProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
 	{
-		npgsqlOptions.CommandTimeout(settings.CommandTimeout);
-		npgsqlOptions.EnableRetryOnFailure(settings.RetryCount, TimeSpan.FromSeconds(settings.RetryDelaySeconds), null);
-	});
+		options.UseSqlite(conn, sqliteOptions =>
+		{
+			sqliteOptions.CommandTimeout(settings.CommandTimeout);
+		});
+	}
+	else
+	{
+		// Fallback to PostgreSQL if configured
+		options.UseNpgsql(conn, npgsqlOptions =>
+		{
+			npgsqlOptions.CommandTimeout(settings.CommandTimeout);
+			npgsqlOptions.EnableRetryOnFailure(settings.RetryCount, TimeSpan.FromSeconds(settings.RetryDelaySeconds), null);
+		});
+	}
 
 	if (builder.Environment.IsDevelopment())
 	{
@@ -93,11 +108,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Enable Swagger in all environments for API documentation
+app.UseSwagger();
+app.UseSwaggerUI();
+
 if (app.Environment.IsDevelopment())
 {
 	app.UseDeveloperExceptionPage();
-	app.UseSwagger();
-	app.UseSwaggerUI();
 }
 
 app.UseRouting();

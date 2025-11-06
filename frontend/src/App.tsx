@@ -1,96 +1,137 @@
-import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
-import TicketList from './pages/TicketList'
-import TicketCreate from './pages/TicketCreate'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Admin from './pages/Admin'
-import { AuthProvider } from './context/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import { useAuth } from './context/AuthContext'
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import TicketList from './pages/TicketList';
+import TicketCreate from './pages/TicketCreate';
+import TicketDetail from './pages/TicketDetail';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
+import Reports from './pages/Reports';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 function Header() {
-  const { user, logout } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [theme, setTheme] = useState<'light'|'dark'>(() => (localStorage.getItem('tickly_theme') as 'light'|'dark') || 'light')
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('tickly_theme', theme)
-  }, [theme])
-
-  function toggleTheme() {
-    setTheme(t => t === 'light' ? 'dark' : 'light')
-  }
+  const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="app-header">
-      <div className="brand">
-        <span className="logo" aria-hidden />
-        <span>Tickly</span>
-      </div>
-
-      <nav className={`nav-links`} aria-hidden={mobileOpen ? 'false' : 'true'}>
-        <Link to="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
-        <Link to="/" onClick={() => setMobileOpen(false)}>Talepler</Link>
-        <Link to="/create" onClick={() => setMobileOpen(false)}>Yeni Oluştur</Link>
-        {user?.roles?.includes('SuperAdmin') && <Link to="/admin" onClick={() => setMobileOpen(false)}>Admin Panel</Link>}
-        {user?.deptRole && <Link to="/department" onClick={() => setMobileOpen(false)}>Departman Yönetimi</Link>}
-      </nav>
-
-      <div className="header-right">
-        <button className="btn btn-ghost" onClick={toggleTheme} aria-label="Tema değiştir">{theme === 'light' ? '🌙' : '☀️'}</button>
-        <button className="btn btn-ghost mobile-toggle" onClick={() => setMobileOpen(o => !o)} aria-label="Menü">{mobileOpen ? '✕' : '☰'}</button>
-        {user ? (
-          <div className="user-badge">
-            <span className="avatar" aria-hidden />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <strong style={{ fontSize: 13 }}>{user.username}</strong>
-              {user.deptRole && <span className="muted" style={{ fontSize: 11 }}>{user.deptRole}</span>}
-            </div>
-            <button className="btn btn-ghost" onClick={logout}>Çıkış</button>
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center">
+            <Link to="/" className="text-xl font-bold text-primary-600">
+              Tickly
+            </Link>
           </div>
-        ) : (
-          <Link to="/login">Giriş</Link>
-        )}
-      </div>
 
-      {/* mobile menu overlay */}
-      {mobileOpen && (
-        <div className="mobile-nav" onClick={() => setMobileOpen(false)}>
-          <div className="mobile-nav-inner" onClick={e => e.stopPropagation()}>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link to="/dashboard">Dashboard</Link>
-              <Link to="/">Talepler</Link>
-              <Link to="/create">Yeni Oluştur</Link>
-              {user?.roles?.includes('SuperAdmin') && <Link to="/admin">Admin Panel</Link>}
-              {user?.deptRole && <Link to="/department">Departman Yönetimi</Link>}
+          {user && (
+            <nav className="hidden md:flex space-x-4">
+              <Link to="/dashboard" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                Dashboard
+              </Link>
+              <Link to="/tickets" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                Talepler
+              </Link>
+              <Link to="/tickets/create" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                Yeni Talep
+              </Link>
+              <Link to="/reports" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                Raporlar
+              </Link>
+              {user.roles?.includes('SuperAdmin') && (
+                <Link to="/admin" className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
+                  Admin
+                </Link>
+              )}
             </nav>
+          )}
+
+          <div className="flex items-center space-x-4">
+            {user ? (
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-700">{user.displayName || user.username}</span>
+                <button onClick={logout} className="btn btn-ghost text-sm">
+                  Çıkış
+                </button>
+              </div>
+            ) : (
+              <Link to="/login" className="btn btn-primary">
+                Giriş Yap
+              </Link>
+            )}
           </div>
         </div>
-      )}
+      </div>
     </header>
-  )
+  );
 }
 
 export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <div className="app-container">
+        <div className="min-h-screen bg-gray-50">
           <Header />
-
-          <main className="page-main">
+          
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <Routes>
-              <Route path="/" element={<TicketList />} />
-              <Route path="/create" element={<TicketCreate />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/register" element={<Register />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tickets"
+                element={
+                  <ProtectedRoute>
+                    <TicketList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tickets/:id"
+                element={
+                  <ProtectedRoute>
+                    <TicketDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tickets/create"
+                element={
+                  <ProtectedRoute>
+                    <TicketCreate />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute requireRole="SuperAdmin">
+                    <Admin />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/" element={<Login />} />
             </Routes>
           </main>
         </div>
       </AuthProvider>
     </BrowserRouter>
-  )
+  );
 }

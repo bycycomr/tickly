@@ -1,5 +1,4 @@
 using System;
-using System.Text.Json;
 
 namespace Tickly.Api.Models
 {
@@ -16,7 +15,7 @@ namespace Tickly.Api.Models
         public string Name { get; set; } = null!;
         public string PrimaryDomain { get; set; } = null!;
         public TenantPlan Plan { get; set; } = TenantPlan.Standard;
-        public JsonDocument? SettingsJson { get; set; }
+        public string? SettingsJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? DeletedAt { get; set; }
         public bool IsActive { get; set; } = true;

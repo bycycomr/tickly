@@ -1,31 +1,44 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, AlertCircle } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
 
-export default function Login() {
+export default function Register() {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { register } = useAuth();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
 
-    if (!username || !password) {
-      setError('Kullanıcı adı ve şifre gereklidir');
+    if (!username || !email || !password || !displayName) {
+      setError('Tüm alanları doldurunuz');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Şifreler eşleşmiyor');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Şifre en az 6 karakter olmalıdır');
       return;
     }
 
     try {
       setLoading(true);
-      await login(username, password);
+      await register(username, email, password, displayName);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
+      setError(err?.response?.data?.message || 'Kayıt başarısız. Lütfen tekrar deneyin.');
     } finally {
       setLoading(false);
     }
@@ -36,10 +49,10 @@ export default function Login() {
       <div className="card max-w-md w-full">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-600 text-white mb-4">
-            <LogIn size={32} />
+            <UserPlus size={32} />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Tickly</h1>
-          <p className="text-gray-600 mt-2">Destek Talep Yönetim Sistemi</p>
+          <h1 className="text-3xl font-bold text-gray-900">Kayıt Ol</h1>
+          <p className="text-gray-600 mt-2">Yeni hesap oluşturun</p>
         </div>
 
         {error && (
@@ -60,9 +73,41 @@ export default function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="input"
-              placeholder="Kullanıcı adınızı girin"
+              placeholder="kullaniciadi"
               required
               autoFocus
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="label">
+              E-posta
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+              placeholder="ornek@email.com"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="displayName" className="label">
+              Ad Soyad
+            </label>
+            <input
+              id="displayName"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              className="input"
+              placeholder="Ad Soyad"
+              required
               disabled={loading}
             />
           </div>
@@ -77,7 +122,23 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"
-              placeholder="Şifrenizi girin"
+              placeholder="En az 6 karakter"
+              required
+              disabled={loading}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="label">
+              Şifre Tekrar
+            </label>
+            <input
+              id="confirmPassword"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="input"
+              placeholder="Şifrenizi tekrar girin"
               required
               disabled={loading}
             />
@@ -87,22 +148,21 @@ export default function Login() {
             {loading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                Giriş yapılıyor...
+                Kayıt yapılıyor...
               </div>
             ) : (
-              'Giriş Yap'
+              'Kayıt Ol'
             )}
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          Hesabınız yok mu?{' '}
-          <Link to="/register" className="text-primary-600 hover:text-primary-700 font-medium">
-            Kayıt Olun
+          Hesabınız var mı?{' '}
+          <Link to="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+            Giriş Yapın
           </Link>
         </div>
       </div>
     </div>
   );
 }
-

@@ -51,17 +51,60 @@ namespace Tickly.Api.Controllers
             }
 
             var token = GenerateToken(claims);
-            return Ok(new { token });
+            
+            return Ok(new 
+            { 
+                token,
+                user = new
+                {
+                    id = user.Id,
+                    username = user.Username,
+                    email = user.Email,
+                    displayName = user.DisplayName,
+                    tenantId = user.TenantId,
+                    roles = roles.Where(r => r.DepartmentId == null).Select(r => r.Role.ToString()).ToArray()
+                }
+            });
         }
 
         [HttpPost("register")]
         public IActionResult Register([FromBody] RegisterRequest req)
         {
-            if (_db.Users.Any(u => u.Username == req.Username)) return BadRequest(new { error = "Username taken" });
-            var user = new User { Username = req.Username, Email = req.Email, DisplayName = req.DisplayName, PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password) };
+            if (_db.Users.Any(u => u.Username == req.Username)) 
+                return BadRequest(new { error = "Username taken" });
+            
+            var user = new User 
+            { 
+                Username = req.Username, 
+                Email = req.Email, 
+                DisplayName = req.DisplayName, 
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password) 
+            };
+            
             _db.Users.Add(user);
             _db.SaveChanges();
-            return Ok(new { id = user.Id });
+            
+            var claims = new List<Claim>
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(ClaimTypes.Name, user.Username)
+            };
+            
+            var token = GenerateToken(claims);
+            
+            return Ok(new 
+            { 
+                token,
+                user = new
+                {
+                    id = user.Id,
+                    username = user.Username,
+                    email = user.Email,
+                    displayName = user.DisplayName,
+                    tenantId = user.TenantId,
+                    roles = new string[] { }
+                }
+            });
         }
 
         private string GenerateToken(IEnumerable<Claim> claims)
