@@ -7,6 +7,8 @@ export interface User {
   displayName: string;
   tenantId?: string;
   departmentId?: number;
+  roles?: string[];
+  departmentRoles?: Array<{ departmentId: number; role: string }>;
   createdAt: string;
 }
 
@@ -126,6 +128,7 @@ export interface AutomationRule {
   actionJson?: string;
   priority: number;
   createdAt: string;
+  lastRunAt?: string;
 }
 
 export interface DashboardStats {
@@ -151,4 +154,43 @@ export interface DashboardStats {
 export interface ApiError {
   error: string;
   details?: string;
+}
+
+export enum ArticleStatus {
+  Draft = 0,
+  Published = 1,
+  Archived = 2,
+}
+
+export interface Article {
+  id: number;
+  tenantId: string;
+  departmentId?: number;
+  categoryId?: number;
+  title: string;
+  slug: string;
+  content: string;
+  summary?: string;
+  status: ArticleStatus;
+  isFeatured: boolean;
+  viewCount: number;
+  helpfulCount: number;
+  tags?: string;
+  authorId?: string;
+  departmentName?: string;
+  categoryName?: string;
+  createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+}
+
+export interface CreateArticleDto {
+  departmentId?: number;
+  categoryId?: number;
+  title: string;
+  content: string;
+  summary?: string;
+  status?: ArticleStatus;
+  isFeatured: boolean;
+  tags?: string;
 }

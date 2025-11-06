@@ -22,6 +22,7 @@ namespace Tickly.Api.Controllers
         }
 
         [HttpGet("departments")]
+        [AllowAnonymous] // Departman listesi herkes görebilir
         public IActionResult GetDepartments()
         {
             var deps = _db.Departments.ToList();
@@ -143,7 +144,13 @@ namespace Tickly.Api.Controllers
             var members = _db.RoleAssignments.Where(r => r.DepartmentId == id).ToList();
             var users = from m in members
                         join u in _db.Users on m.UserId equals u.Id
-                        select new { u.Id, u.Username, u.DisplayName, Role = m.Role };
+                        select new { 
+                            AssignmentId = m.Id,  // Benzersiz key için RoleAssignment.Id
+                            UserId = u.Id, 
+                            u.Username, 
+                            u.DisplayName, 
+                            Role = m.Role 
+                        };
             return Ok(users);
         }
 
@@ -157,6 +164,28 @@ namespace Tickly.Api.Controllers
             _db.RoleAssignments.Add(ra);
             _db.SaveChanges();
             return Ok(ra);
+        }
+
+        [HttpDelete("departments/{deptId}/users/{userId}")]
+        public IActionResult RemoveUserFromDepartment(int deptId, string userId)
+        {
+            var user = _db.Users.Find(userId);
+            if (user == null) return NotFound(new { error = "User not found" });
+
+            var dept = _db.Departments.Find(deptId);
+            if (dept == null) return NotFound(new { error = "Department not found" });
+
+            var assignments = _db.RoleAssignments
+                .Where(r => r.UserId == userId && r.DepartmentId == deptId)
+                .ToList();
+
+            if (assignments.Count == 0)
+                return NotFound(new { error = "User is not assigned to this department" });
+
+            _db.RoleAssignments.RemoveRange(assignments);
+            _db.SaveChanges();
+
+            return Ok(new { message = "User removed from department successfully" });
         }
 
         [HttpPost("roles/assign-global")]

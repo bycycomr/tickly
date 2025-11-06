@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import { ArrowLeft, Send, AlertCircle } from 'lucide-react';
-import type { Category, Department } from '../lib/types';
+import { ArrowLeft, Send, AlertCircle, Clock } from 'lucide-react';
+import type { Category, Department, SLAPlan } from '../lib/types';
 
 export default function TicketCreate() {
   const [title, setTitle] = useState('');
@@ -11,8 +11,10 @@ export default function TicketCreate() {
   const [priority, setPriority] = useState(2); // Medium
   const [categoryId, setCategoryId] = useState<number | undefined>();
   const [departmentId, setDepartmentId] = useState<number | undefined>();
+  const [slaPlanId, setSlaPlanId] = useState<number | undefined>();
   const [categories, setCategories] = useState<Category[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -24,12 +26,14 @@ export default function TicketCreate() {
 
   async function loadData() {
     try {
-      const [cats, depts] = await Promise.all([
+      const [cats, depts, plans] = await Promise.all([
         api.getCategories(),
         api.getDepartments(),
+        api.getSLAPlans(),
       ]);
       setCategories(cats);
       setDepartments(depts);
+      setSlaPlans(plans);
     } catch (err) {
       console.error('Failed to load data:', err);
     } finally {
@@ -55,6 +59,7 @@ export default function TicketCreate() {
         priority,
         categoryId,
         departmentId,
+        slaPlanId,
         status: 0, // Open
         channel: 2, // Web
       });
@@ -200,6 +205,30 @@ export default function TicketCreate() {
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label htmlFor="sla" className="label">
+                <Clock size={16} className="inline mr-1" />
+                SLA Planı (Opsiyonel)
+              </label>
+              <select
+                id="sla"
+                value={slaPlanId || ''}
+                onChange={(e) => setSlaPlanId(e.target.value ? Number(e.target.value) : undefined)}
+                className="select"
+                disabled={saving}
+              >
+                <option value="">Otomatik (önceliğe göre)</option>
+                {slaPlans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name} - Yanıt: {plan.responseTimeMinutes}dk, Çözüm: {plan.resolutionTimeMinutes}dk
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Boş bırakırsanız, önceliğe göre otomatik SLA atanacaktır
+              </p>
             </div>
 
             <div className="flex items-center justify-end space-x-4 pt-6 border-t">

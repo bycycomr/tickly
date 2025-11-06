@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Clock, User, Tag, AlertCircle, MessageSquare, Paperclip } from 'lucide-react'
 import api from '../lib/api'
-import { Ticket, TicketEvent } from '../lib/types'
+import signalRService from '../lib/signalr'
+import { Ticket, TicketEvent, SLAPlan } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
 const statusMap: Record<number, string> = {
@@ -46,6 +47,11 @@ export default function TicketDetail() {
   const [selectedAssignee, setSelectedAssignee] = useState('')
   const [assigning, setAssigning] = useState(false)
 
+  const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([])
+  const [currentSLA, setCurrentSLA] = useState<SLAPlan | null>(null)
+  const [showSLAEdit, setShowSLAEdit] = useState(false)
+  const [selectedSLAPlanId, setSelectedSLAPlanId] = useState<number | undefined>()
+
   async function loadTicket() {
     if (!id) return
     setLoading(true)
@@ -78,6 +84,66 @@ export default function TicketDetail() {
       setStaffMembers(members)
     } catch (e) {
       console.error('Failed to load staff:', e)
+    }
+  }
+
+  async function loadSLAPlans() {
+    try {
+      const plans = await api.getSLAPlans()
+      setSlaPlans(plans)
+      
+      // Find current SLA plan
+      if (ticket?.slaPlanId) {
+        const current = plans.find(p => p.id === ticket.slaPlanId)
+        if (current) setCurrentSLA(current)
+      }
+    } catch (e) {
+      console.error('Failed to load SLA plans:', e)
+    }
+  }
+
+  async function handleSLAChange() {
+    if (!id || !selectedSLAPlanId) return
+    try {
+      await api.updateTicket(Number(id), { slaPlanId: selectedSLAPlanId })
+      toast.success('SLA planı güncellendi')
+      setShowSLAEdit(false)
+      await loadTicket()
+      await loadSLAPlans()
+    } catch (e: any) {
+      console.error(e)
+      toast.error(e?.response?.data?.error || 'SLA güncellenemedi')
+    }
+  }
+
+  function calculateSLAStatus() {
+    if (!ticket?.dueAt) return null
+    
+    const now = new Date()
+    const dueDate = new Date(ticket.dueAt)
+    const diffMs = dueDate.getTime() - now.getTime()
+    const diffMins = Math.floor(diffMs / 60000)
+    
+    if (diffMins < 0) {
+      return {
+        status: 'breached',
+        text: `${Math.abs(diffMins)} dakika gecikmiş`,
+        color: 'text-red-600 bg-red-50 border-red-200'
+      }
+    } else if (diffMins < 30) {
+      return {
+        status: 'warning',
+        text: `${diffMins} dakika kaldı`,
+        color: 'text-orange-600 bg-orange-50 border-orange-200'
+      }
+    } else {
+      const hours = Math.floor(diffMins / 60)
+      const mins = diffMins % 60
+      return {
+        status: 'ok',
+        text: `${hours > 0 ? `${hours} saat ` : ''}${mins} dakika kaldı`,
+        color: 'text-green-600 bg-green-50 border-green-200'
+      }
     }
   }
 
@@ -140,8 +206,38 @@ export default function TicketDetail() {
       if (ticket.departmentId) {
         loadStaffMembers()
       }
+      loadSLAPlans()
     }
   }, [ticket])
+
+  // SignalR real-time updates
+  useEffect(() => {
+    if (!id) return
+
+    // Join ticket room
+    signalRService.joinTicket(id)
+
+    // Listen for real-time comments
+    const handleReceiveComment = (data: any) => {
+      console.log('Real-time comment received:', data)
+      // Reload events to show new comment
+      loadEvents()
+      toast.success(`Yeni yorum: ${data.username}`)
+    }
+
+    const handleUserTyping = (data: any) => {
+      console.log(`${data.username} is typing...`)
+      // You can show a "User is typing..." indicator here
+    }
+
+    signalRService.onReceiveComment(handleReceiveComment)
+    signalRService.onUserTyping(handleUserTyping)
+
+    return () => {
+      // Leave ticket room on unmount
+      signalRService.leaveTicket(id)
+    }
+  }, [id])
 
   if (loading) {
     return (
@@ -263,6 +359,117 @@ export default function TicketDetail() {
             </div>
           </div>
         )}
+
+        {/* SLA Information Section */}
+        <div className="pt-4 border-t border-gray-200 mt-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+            <Clock className="w-4 h-4 mr-2" />
+            SLA Bilgileri
+          </h3>
+          
+          {currentSLA ? (
+            <div className="space-y-3">
+              <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium text-sm text-gray-900">{currentSLA.name}</span>
+                  <button
+                    onClick={() => setShowSLAEdit(!showSLAEdit)}
+                    className="text-xs text-primary-600 hover:text-primary-800"
+                  >
+                    {showSLAEdit ? 'İptal' : 'Değiştir'}
+                  </button>
+                </div>
+                <div className="text-xs text-gray-600 space-y-1">
+                  <div>Yanıt Süresi: {currentSLA.responseTimeMinutes} dakika</div>
+                  <div>Çözüm Süresi: {currentSLA.resolutionTimeMinutes} dakika</div>
+                  {currentSLA.description && (
+                    <div className="text-gray-500 mt-1">{currentSLA.description}</div>
+                  )}
+                </div>
+              </div>
+
+              {ticket.dueAt && (() => {
+                const slaStatus = calculateSLAStatus()
+                return slaStatus ? (
+                  <div className={`rounded-lg p-3 border ${slaStatus.color}`}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        <span className="text-sm font-medium">
+                          {slaStatus.status === 'breached' ? '⚠️ SLA İhlali!' : 
+                           slaStatus.status === 'warning' ? '⏰ Son Dakika!' : 
+                           '✅ SLA Uygunluğu'}
+                        </span>
+                      </div>
+                      <span className="text-sm font-semibold">{slaStatus.text}</span>
+                    </div>
+                    <div className="text-xs mt-2">
+                      Son Tarih: {new Date(ticket.dueAt).toLocaleString('tr-TR')}
+                    </div>
+                  </div>
+                ) : null
+              })()}
+
+              {showSLAEdit && (
+                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                  <select
+                    value={selectedSLAPlanId || ''}
+                    onChange={(e) => setSelectedSLAPlanId(e.target.value ? Number(e.target.value) : undefined)}
+                    className="input flex-1"
+                  >
+                    <option value="">-- SLA Planı Seç --</option>
+                    {slaPlans.map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} (Yanıt: {plan.responseTimeMinutes}dk, Çözüm: {plan.resolutionTimeMinutes}dk)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleSLAChange}
+                    disabled={!selectedSLAPlanId}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Güncelle
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">SLA planı atanmamış (otomatik)</p>
+              <button
+                onClick={() => setShowSLAEdit(!showSLAEdit)}
+                className="btn-secondary text-sm"
+              >
+                SLA Planı Ata
+              </button>
+              
+              {showSLAEdit && (
+                <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                  <select
+                    value={selectedSLAPlanId || ''}
+                    onChange={(e) => setSelectedSLAPlanId(e.target.value ? Number(e.target.value) : undefined)}
+                    className="input flex-1"
+                  >
+                    <option value="">-- SLA Planı Seç --</option>
+                    {slaPlans.map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} (Yanıt: {plan.responseTimeMinutes}dk, Çözüm: {plan.resolutionTimeMinutes}dk)
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={handleSLAChange}
+                    disabled={!selectedSLAPlanId}
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Ata
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="card">
@@ -283,9 +490,11 @@ export default function TicketDetail() {
                 payload = { raw: event.payloadJson };
               }
 
-              const isComment = event.type.includes('Comment');
-              const isStatusChange = event.type === 'StatusChange';
-              const isAssignment = event.type === 'Assignment';
+              // Safely handle event.type whether it's string or number
+              const eventType = String(event.type || '');
+              const isComment = eventType.includes('Comment') || eventType === '3';
+              const isStatusChange = eventType === 'StatusChange' || eventType === '1';
+              const isAssignment = eventType === 'Assignment' || eventType === '2';
               const isInternal = event.visibility === 'Internal';
 
               return (

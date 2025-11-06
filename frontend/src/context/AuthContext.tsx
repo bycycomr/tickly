@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import api from '../lib/api';
+import signalRService from '../lib/signalr';
 import type { User } from '../lib/types';
 
 type UserInfo = {
@@ -67,6 +68,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(response.token);
     setUser(response.user as UserInfo);
+
+    // Initialize SignalR connections after login
+    try {
+      await signalRService.initializeConnections(response.token);
+    } catch (error) {
+      console.error('Failed to initialize SignalR:', error);
+    }
   }
 
   async function register(username: string, email: string, password: string, displayName: string) {
@@ -85,6 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setToken(null);
     setUser(null);
+
+    // Disconnect SignalR on logout
+    signalRService.disconnect();
   }
 
   function hasRole(role: string): boolean {

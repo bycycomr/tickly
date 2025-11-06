@@ -12,6 +12,8 @@ import type {
   SLAPlan,
   AutomationRule,
   DashboardStats,
+  Article,
+  CreateArticleDto,
 } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -97,8 +99,13 @@ class ApiClient {
   }
 
   // Tickets
-  async getTickets(): Promise<Ticket[]> {
-    const response = await this.client.get<Ticket[]>('/api/tickets');
+  async getTickets(params?: {
+    status?: number;
+    priority?: number;
+    departmentId?: number;
+    search?: string;
+  }): Promise<Ticket[]> {
+    const response = await this.client.get<Ticket[]>('/api/tickets', { params });
     return response.data;
   }
 
@@ -179,12 +186,13 @@ class ApiClient {
     return response.data;
   }
 
-  // Admin - Departments
+  // Departments (herkes erişebilir)
   async getDepartments(): Promise<Department[]> {
-    const response = await this.client.get<Department[]>('/api/admin/departments');
+    const response = await this.client.get<Department[]>('/api/departments');
     return response.data;
   }
 
+  // Admin - Departments (sadece admin)
   async createDepartment(data: { name: string; description?: string }): Promise<Department> {
     const response = await this.client.post<Department>('/api/admin/departments', data);
     return response.data;
@@ -230,6 +238,10 @@ class ApiClient {
     });
   }
 
+  async removeUserFromDepartment(departmentId: number, userId: string): Promise<void> {
+    await this.client.delete(`/api/admin/departments/${departmentId}/users/${userId}`);
+  }
+
   async assignGlobalRole(userId: string, role: string): Promise<void> {
     await this.client.post('/api/admin/roles/assign-global', {
       userId,
@@ -237,8 +249,14 @@ class ApiClient {
     });
   }
 
-  // Admin - SLA Plans
-  async getSLAPlans(tenantId?: string): Promise<SLAPlan[]> {
+  // SLA Plans - Public read access for ticket management
+  async getSLAPlans(): Promise<SLAPlan[]> {
+    const response = await this.client.get<SLAPlan[]>('/api/tickets/sla-plans');
+    return response.data;
+  }
+
+  // Admin - SLA Plans (full management)
+  async getAdminSLAPlans(tenantId?: string): Promise<SLAPlan[]> {
     const params = tenantId ? { tenantId } : {};
     const response = await this.client.get<SLAPlan[]>('/api/admin/sla-plans', { params });
     return response.data;
@@ -368,6 +386,49 @@ class ApiClient {
       responseType: 'blob',
     });
     return response.data;
+  }
+
+  // Knowledge Base
+  async getArticles(params?: {
+    departmentId?: number;
+    categoryId?: number;
+    search?: string;
+    featured?: boolean;
+  }): Promise<Article[]> {
+    const response = await this.client.get<Article[]>('/api/kb', { params });
+    return response.data;
+  }
+
+  async getArticle(slug: string): Promise<Article> {
+    const response = await this.client.get<Article>(`/api/kb/${slug}`);
+    return response.data;
+  }
+
+  async markArticleHelpful(id: number): Promise<{ helpfulCount: number }> {
+    const response = await this.client.post(`/api/kb/${id}/helpful`);
+    return response.data;
+  }
+
+  async getAdminArticles(params?: {
+    status?: number;
+    departmentId?: number;
+  }): Promise<Article[]> {
+    const response = await this.client.get<Article[]>('/api/kb/admin/all', { params });
+    return response.data;
+  }
+
+  async createArticle(data: CreateArticleDto): Promise<Article> {
+    const response = await this.client.post<Article>('/api/kb/admin', data);
+    return response.data;
+  }
+
+  async updateArticle(id: number, data: CreateArticleDto): Promise<Article> {
+    const response = await this.client.put<Article>(`/api/kb/admin/${id}`, data);
+    return response.data;
+  }
+
+  async deleteArticle(id: number): Promise<void> {
+    await this.client.delete(`/api/kb/admin/${id}`);
   }
 }
 

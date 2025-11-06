@@ -18,11 +18,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// SignalR
+builder.Services.AddSignalR();
+
 // Application services
 builder.Services.AddScoped<Tickly.Api.Services.TicketWorkflowService>();
 builder.Services.AddScoped<Tickly.Api.Services.AuditService>();
 builder.Services.AddScoped<Tickly.Api.Services.SLAMonitoringService>();
 builder.Services.AddScoped<Tickly.Api.Services.AutomationService>();
+builder.Services.AddScoped<Tickly.Api.Services.IEmailService, Tickly.Api.Services.EmailService>();
+builder.Services.AddScoped<Tickly.Api.Services.IEmailInboundService, Tickly.Api.Services.EmailInboundService>();
 
 // HTTP Client for webhooks
 builder.Services.AddHttpClient();
@@ -30,6 +35,7 @@ builder.Services.AddHttpClient();
 // Background workers
 builder.Services.AddHostedService<Tickly.Api.Services.VirusScanWorker>();
 builder.Services.AddHostedService<Tickly.Api.Services.SLAMonitorWorker>();
+builder.Services.AddHostedService<Tickly.Api.Services.ImapListenerWorker>();
 
 // Database configuration
 builder.Services.Configure<DatabaseSettings>(configuration.GetSection("Database"));
@@ -88,7 +94,7 @@ builder.Services.AddAuthentication(options =>
 		IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey))
 	};
 	
-	// Debug: Log token validation failures
+	// Debug: Log token validation failures + SignalR token support
 	options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
 	{
 		OnAuthenticationFailed = context =>
@@ -104,6 +110,19 @@ builder.Services.AddAuthentication(options =>
 		OnChallenge = context =>
 		{
 			Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
+			return System.Threading.Tasks.Task.CompletedTask;
+		},
+		OnMessageReceived = context =>
+		{
+			// SignalR için access_token query string'den oku
+			var accessToken = context.Request.Query["access_token"];
+			var path = context.HttpContext.Request.Path;
+			
+			if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+			{
+				context.Token = accessToken;
+			}
+			
 			return System.Threading.Tasks.Task.CompletedTask;
 		}
 	};
@@ -122,7 +141,10 @@ builder.Services.AddCors(options =>
 	options.AddPolicy(name: corsPolicyName,
 		policy =>
 		{
-			policy.WithOrigins("http://localhost:5173", "http://localhost:80").AllowAnyHeader().AllowAnyMethod();
+			policy.WithOrigins("http://localhost:5173", "http://localhost:80")
+				.AllowAnyHeader()
+				.AllowAnyMethod()
+				.AllowCredentials(); // SignalR için gerekli
 		});
 });
 
@@ -143,6 +165,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// SignalR Hubs
+app.MapHub<Tickly.Api.Hubs.TicketHub>("/hubs/ticket");
+app.MapHub<Tickly.Api.Hubs.NotificationHub>("/hubs/notification");
 
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy" }));
 

@@ -21,6 +21,7 @@ namespace Tickly.Api.Data
         public DbSet<AutomationRule> AutomationRules { get; set; } = null!;
         public DbSet<EmailInbound> EmailInbounds { get; set; } = null!;
         public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+        public DbSet<Article> Articles { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -120,6 +121,17 @@ namespace Tickly.Api.Data
                 b.Property(a => a.EntityId).IsRequired().HasMaxLength(100);
                 b.Property(a => a.Action).IsRequired().HasMaxLength(50);
                 b.HasIndex(a => new { a.TenantId, a.CreatedAt });
+            });
+
+            modelBuilder.Entity<Article>(b =>
+            {
+                b.HasKey(a => a.Id);
+                b.Property(a => a.Title).IsRequired().HasMaxLength(500);
+                b.Property(a => a.Slug).IsRequired().HasMaxLength(600);
+                b.Property(a => a.Content).IsRequired();
+                b.HasIndex(a => new { a.TenantId, a.Slug }).IsUnique();
+                b.HasIndex(a => new { a.TenantId, a.DepartmentId, a.Status });
+                b.HasIndex(a => new { a.TenantId, a.CategoryId });
             });
         }
     }

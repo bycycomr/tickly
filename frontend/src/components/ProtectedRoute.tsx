@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
   children: JSX.Element;
-  requireRole?: string;
+  requireRole?: string; // "SuperAdmin" veya "SuperAdmin,DepartmentManager" (virgülle ayrılmış)
 }
 
 export default function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
@@ -22,8 +22,14 @@ export default function ProtectedRoute({ children, requireRole }: ProtectedRoute
     return <Navigate to="/login" replace />;
   }
 
-  if (requireRole && !user.roles?.includes(requireRole)) {
-    return <Navigate to="/dashboard" replace />;
+  if (requireRole) {
+    // Virgülle ayrılmış rolleri destekle
+    const requiredRoles = requireRole.split(',').map(r => r.trim());
+    const hasRequiredRole = requiredRoles.some(role => user.roles?.includes(role));
+    
+    if (!hasRequiredRole) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;

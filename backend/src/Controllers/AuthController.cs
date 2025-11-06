@@ -53,6 +53,9 @@ namespace Tickly.Api.Controllers
 
             var token = GenerateToken(claims);
             
+            // Get first department assignment for user info
+            var primaryDepartment = roles.FirstOrDefault(r => r.DepartmentId != null);
+            
             return Ok(new 
             { 
                 token,
@@ -63,7 +66,12 @@ namespace Tickly.Api.Controllers
                     email = user.Email,
                     displayName = user.DisplayName,
                     tenantId = user.TenantId,
-                    roles = roles.Where(r => r.DepartmentId == null).Select(r => r.Role.ToString()).ToArray()
+                    departmentId = primaryDepartment?.DepartmentId,
+                    roles = roles.Where(r => r.DepartmentId == null).Select(r => r.Role.ToString()).ToArray(),
+                    departmentRoles = roles.Where(r => r.DepartmentId != null).Select(r => new { 
+                        departmentId = r.DepartmentId, 
+                        role = r.Role.ToString() 
+                    }).ToArray()
                 }
             });
         }
@@ -85,11 +93,25 @@ namespace Tickly.Api.Controllers
             _db.Users.Add(user);
             _db.SaveChanges();
             
+            // Otomatik olarak EndUser rolü ata (herkes ticket oluşturabilmeli)
+            var endUserRole = new RoleAssignment
+            {
+                UserId = user.Id,
+                TenantId = user.TenantId,
+                DepartmentId = null, // Global rol
+                Role = RoleName.EndUser,
+                AssignedBy = "system",
+                AssignedAt = DateTime.UtcNow
+            };
+            _db.RoleAssignments.Add(endUserRole);
+            _db.SaveChanges();
+            
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),
                 new Claim(ClaimTypes.Name, user.Username),
-                new Claim("tenant_id", user.TenantId.ToString())
+                new Claim("tenant_id", user.TenantId.ToString()),
+                new Claim(ClaimTypes.Role, RoleName.EndUser.ToString())
             };
             
             var token = GenerateToken(claims);
@@ -104,7 +126,7 @@ namespace Tickly.Api.Controllers
                     email = user.Email,
                     displayName = user.DisplayName,
                     tenantId = user.TenantId,
-                    roles = new string[] { }
+                    roles = new string[] { "EndUser" }
                 }
             });
         }

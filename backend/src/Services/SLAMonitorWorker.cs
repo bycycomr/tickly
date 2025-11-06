@@ -1,4 +1,6 @@
 using Tickly.Api.Services;
+using Tickly.Api.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Tickly.Api.Services;
 
@@ -44,6 +46,7 @@ public class SLAMonitorWorker : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var slaService = scope.ServiceProvider.GetRequiredService<SLAMonitoringService>();
+        var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<NotificationHub>>();
 
         // Check for SLA violations (breached)
         var violatingTickets = await slaService.CheckSLAViolationsAsync();
@@ -68,6 +71,17 @@ public class SLAMonitorWorker : BackgroundService
                         ticket.Id,
                         ticket.TenantId,
                         ticket.Title);
+
+                    // Send real-time notification to assigned user
+                    if (!string.IsNullOrEmpty(ticket.AssignedToUserId))
+                    {
+                        await hubContext.SendSLAViolationAsync(
+                            ticket.AssignedToUserId,
+                            ticket.Id,
+                            ticket.Title ?? "Untitled Ticket",
+                            $"SLA breached by {breachTime.TotalMinutes:F0} minutes"
+                        );
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -88,7 +102,7 @@ public class SLAMonitorWorker : BackgroundService
                 "Found {Count} tickets approaching SLA deadline (within 30 minutes)",
                 warningTickets.Count);
 
-            // Here you could send warning notifications without escalating
+            // Send warning notifications
             foreach (var ticket in warningTickets)
             {
                 var remainingTime = ticket.DueAt!.Value - DateTime.UtcNow;
@@ -97,6 +111,17 @@ public class SLAMonitorWorker : BackgroundService
                     ticket.Id,
                     ticket.TenantId,
                     remainingTime.TotalMinutes);
+
+                // Send real-time warning to assigned user
+                if (!string.IsNullOrEmpty(ticket.AssignedToUserId))
+                {
+                    await hubContext.SendSLAViolationAsync(
+                        ticket.AssignedToUserId,
+                        ticket.Id,
+                        ticket.Title ?? "Untitled Ticket",
+                        $"⚠️ SLA warning: {remainingTime.TotalMinutes:F0} minutes remaining"
+                    );
+                }
             }
         }
     }

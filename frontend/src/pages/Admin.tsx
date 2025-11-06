@@ -1,18 +1,19 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import { Building2, Plus, Users, UserPlus, AlertCircle, Trash2 } from 'lucide-react';
-import type { Department } from '../lib/types';
+import { Building2, Plus, Users, UserPlus, AlertCircle, Trash2, Clock, FolderTree, Zap, BookOpen } from 'lucide-react';
+import type { Department, SLAPlan, Category, AutomationRule, Article, ArticleStatus, CreateArticleDto } from '../lib/types';
 
 type Member = {
-  id: string;
+  assignmentId: number;
+  userId: string;
   username: string;
   displayName?: string;
   role: number;
 };
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState<'departments' | 'users'>('departments');
+  const [activeTab, setActiveTab] = useState<'departments' | 'users' | 'sla' | 'categories' | 'automation' | 'kb'>('departments');
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [newName, setNewName] = useState('');
@@ -32,14 +33,61 @@ export default function Admin() {
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   
+  // SLA Plan states
+  const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([]);
+  const [loadingSLA, setLoadingSLA] = useState(false);
+  const [newSLAName, setNewSLAName] = useState('');
+  const [newSLADescription, setNewSLADescription] = useState('');
+  const [newSLAResponseTime, setNewSLAResponseTime] = useState('');
+  const [newSLAResolutionTime, setNewSLAResolutionTime] = useState('');
+  
+  // Category states
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryDeptId, setNewCategoryDeptId] = useState<number | ''>('');
+  const [newCategoryParentId, setNewCategoryParentId] = useState<number | ''>('');
+  
+  // Automation Rule states
+  const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+  const [loadingAutomation, setLoadingAutomation] = useState(false);
+  const [newRuleName, setNewRuleName] = useState('');
+  const [newRuleDescription, setNewRuleDescription] = useState('');
+  const [newRuleTrigger, setNewRuleTrigger] = useState<number>(0);
+  const [newRuleEnabled, setNewRuleEnabled] = useState(true);
+  const [newRulePriority, setNewRulePriority] = useState('100');
+  const [newRuleCondition, setNewRuleCondition] = useState('{}');
+  const [newRuleAction, setNewRuleAction] = useState('{}');
+  
+  // Knowledge Base states
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loadingKB, setLoadingKB] = useState(false);
+  const [newArticleTitle, setNewArticleTitle] = useState('');
+  const [newArticleContent, setNewArticleContent] = useState('');
+  const [newArticleSummary, setNewArticleSummary] = useState('');
+  const [newArticleDeptId, setNewArticleDeptId] = useState<number | ''>('');
+  const [newArticleCategoryId, setNewArticleCategoryId] = useState<number | ''>('');
+  const [newArticleStatus, setNewArticleStatus] = useState<ArticleStatus>(1); // Published
+  const [newArticleFeatured, setNewArticleFeatured] = useState(false);
+  const [newArticleTags, setNewArticleTags] = useState('');
+  
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   useEffect(() => {
     loadDepartments();
     loadUsers(); // Her zaman yükle, kullanıcı dropdown için gerekli
-    if (activeTab === 'users') {
-      // Kullanıcılar tabındayken zaten yüklenecek
+    if (activeTab === 'sla') {
+      loadSLAPlans();
+    }
+    if (activeTab === 'categories') {
+      loadCategories();
+    }
+    if (activeTab === 'automation') {
+      loadAutomationRules();
+    }
+    if (activeTab === 'kb') {
+      loadArticles();
     }
   }, [activeTab]);
 
@@ -141,6 +189,28 @@ export default function Admin() {
     }
   }
 
+  async function removeUserFromDept(deptId: number, userId: string) {
+    if (!confirm('Bu kullanıcıyı departmandan çıkarmak istediğinizden emin misiniz?')) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    try {
+      await api.removeUserFromDepartment(deptId, userId);
+      toast.success('Kullanıcı departmandan çıkarıldı');
+      setSuccess('Kullanıcı departmandan çıkarıldı');
+      loadMembers(deptId);
+      loadUsers(); // Kullanıcı listesini güncelle
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Kullanıcı çıkarılamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
   async function handleDeleteUser(userId: string) {
     if (!confirm('Bu kullanıcıyı arşivlemek istediğinizden emin misiniz?')) {
       return;
@@ -220,6 +290,295 @@ export default function Admin() {
     }
   }
 
+  async function loadSLAPlans() {
+    setLoadingSLA(true);
+    try {
+      const plans = await api.getAdminSLAPlans();
+      setSlaPlans(plans);
+    } catch (err) {
+      console.error('SLA planları yüklenemedi', err);
+      toast.error('SLA planları yüklenemedi');
+    } finally {
+      setLoadingSLA(false);
+    }
+  }
+
+  async function createSLAPlan(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!newSLAName.trim() || !newSLAResponseTime || !newSLAResolutionTime) {
+      setError('Tüm alanlar gereklidir');
+      return;
+    }
+
+    try {
+      const plan = await api.createSLAPlan({
+        name: newSLAName.trim(),
+        description: newSLADescription.trim() || undefined,
+        responseTimeMinutes: parseInt(newSLAResponseTime),
+        resolutionTimeMinutes: parseInt(newSLAResolutionTime),
+      });
+      setSlaPlans((prev) => [...prev, plan]);
+      setNewSLAName('');
+      setNewSLADescription('');
+      setNewSLAResponseTime('');
+      setNewSLAResolutionTime('');
+      toast.success('SLA planı başarıyla oluşturuldu');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'SLA planı oluşturulamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  async function deleteSLAPlan(id: number) {
+    if (!confirm('Bu SLA planını silmek istediğinizden emin misiniz?')) return;
+    
+    try {
+      await api.deleteSLAPlan(id);
+      setSlaPlans((prev) => prev.filter(p => p.id !== id));
+      toast.success('SLA planı silindi');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'SLA planı silinemedi';
+      toast.error(errorMsg);
+    }
+  }
+
+  async function loadCategories() {
+    setLoadingCategories(true);
+    try {
+      const tree = await api.getCategoryTree();
+      setCategories(tree);
+    } catch (err) {
+      console.error('Kategoriler yüklenemedi', err);
+      toast.error('Kategoriler yüklenemedi');
+    } finally {
+      setLoadingCategories(false);
+    }
+  }
+
+  async function createCategory(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    
+    if (!newCategoryName.trim()) {
+      setError('Kategori adı gereklidir');
+      return;
+    }
+
+    try {
+      await api.createCategory({
+        name: newCategoryName.trim(),
+        departmentId: newCategoryDeptId || undefined,
+        parentId: newCategoryParentId || undefined,
+        visibility: 0, // Public
+        sortOrder: 0
+      });
+      setNewCategoryName('');
+      setNewCategoryDeptId('');
+      setNewCategoryParentId('');
+      loadCategories();
+      toast.success('Kategori başarıyla oluşturuldu');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Kategori oluşturulamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  async function deleteCategory(id: number) {
+    if (!confirm('Bu kategoriyi silmek istediğinizden emin misiniz?')) return;
+    
+    try {
+      await api.deleteCategory(id);
+      loadCategories();
+      toast.success('Kategori silindi');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Kategori silinemedi';
+      toast.error(errorMsg);
+    }
+  }
+
+  async function loadAutomationRules() {
+    setLoadingAutomation(true);
+    try {
+      const rules = await api.getAutomationRules();
+      setAutomationRules(rules);
+    } catch (err) {
+      console.error('Automation rules yüklenemedi', err);
+      toast.error('Automation rules yüklenemedi');
+    } finally {
+      setLoadingAutomation(false);
+    }
+  }
+
+  async function createAutomationRule(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    if (!newRuleName.trim()) {
+      setError('Kural adı gereklidir');
+      return;
+    }
+
+    try {
+      // Validate JSON
+      const condition = newRuleCondition.trim() ? JSON.parse(newRuleCondition) : null;
+      const action = newRuleAction.trim() ? JSON.parse(newRuleAction) : null;
+
+      const rule = await api.createAutomationRule({
+        name: newRuleName.trim(),
+        description: newRuleDescription.trim() || undefined,
+        trigger: newRuleTrigger,
+        enabled: newRuleEnabled,
+        priority: parseInt(newRulePriority) || 100,
+        conditionJson: condition ? JSON.stringify(condition) : undefined,
+        actionJson: action ? JSON.stringify(action) : undefined,
+      });
+
+      setAutomationRules((prev) => [...prev, rule]);
+      setNewRuleName('');
+      setNewRuleDescription('');
+      setNewRuleTrigger(0);
+      setNewRuleEnabled(true);
+      setNewRulePriority('100');
+      setNewRuleCondition('{}');
+      setNewRuleAction('{}');
+      toast.success('Automation rule başarıyla oluşturuldu');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || err.message || 'Rule oluşturulamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  async function toggleAutomationRule(id: number, enabled: boolean) {
+    try {
+      await api.updateAutomationRule(id, { enabled });
+      setAutomationRules((prev) =>
+        prev.map((rule) => (rule.id === id ? { ...rule, enabled } : rule))
+      );
+      toast.success(`Rule ${enabled ? 'aktif' : 'pasif'} edildi`);
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Rule güncellenemedi';
+      toast.error(errorMsg);
+    }
+  }
+
+  async function deleteAutomationRule(id: number) {
+    if (!confirm('Bu automation rule\'u silmek istediğinizden emin misiniz?')) return;
+    
+    try {
+      await api.deleteAutomationRule(id);
+      setAutomationRules((prev) => prev.filter((r) => r.id !== id));
+      toast.success('Rule silindi');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Rule silinemedi';
+      toast.error(errorMsg);
+    }
+  }
+
+  async function loadArticles() {
+    setLoadingKB(true);
+    try {
+      const data = await api.getAdminArticles();
+      setArticles(data);
+    } catch (err) {
+      console.error('Makaleler yüklenemedi', err);
+      toast.error('Makaleler yüklenemedi');
+    } finally {
+      setLoadingKB(false);
+    }
+  }
+
+  async function createArticle(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    
+    if (!newArticleTitle.trim() || !newArticleContent.trim()) {
+      setError('Başlık ve içerik gereklidir');
+      return;
+    }
+
+    try {
+      const dto: CreateArticleDto = {
+        title: newArticleTitle.trim(),
+        content: newArticleContent.trim(),
+        summary: newArticleSummary.trim() || undefined,
+        departmentId: newArticleDeptId || undefined,
+        categoryId: newArticleCategoryId || undefined,
+        status: newArticleStatus,
+        isFeatured: newArticleFeatured,
+        tags: newArticleTags.trim() || undefined,
+      };
+
+      const article = await api.createArticle(dto);
+      setArticles((prev) => [article, ...prev]);
+      
+      // Reset form
+      setNewArticleTitle('');
+      setNewArticleContent('');
+      setNewArticleSummary('');
+      setNewArticleDeptId('');
+      setNewArticleCategoryId('');
+      setNewArticleStatus(1);
+      setNewArticleFeatured(false);
+      setNewArticleTags('');
+      
+      toast.success('Makale başarıyla oluşturuldu');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Makale oluşturulamadı';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    }
+  }
+
+  async function deleteArticle(id: number) {
+    if (!confirm('Bu makaleyi silmek istediğinizden emin misiniz?')) return;
+    
+    try {
+      await api.deleteArticle(id);
+      setArticles((prev) => prev.filter((a) => a.id !== id));
+      toast.success('Makale silindi');
+    } catch (err: any) {
+      const errorMsg = err?.response?.data?.error || 'Makale silinemedi';
+      toast.error(errorMsg);
+    }
+  }
+
+  function renderCategoryTree(nodes: any[], level: number = 0): JSX.Element[] {
+    return nodes.map(node => (
+      <div key={node.category.id} style={{ marginLeft: `${level * 20}px` }} className="border-l-2 border-gray-200 pl-3 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <FolderTree className="w-4 h-4 mr-2 text-gray-400" />
+            <span className="font-medium">{node.category.name}</span>
+            {node.category.departmentId && (
+              <span className="ml-2 text-xs text-gray-500">
+                (Dept: {node.category.departmentId})
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => deleteCategory(node.category.id)}
+            className="text-red-600 hover:text-red-900"
+            title="Sil"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+        {node.children && node.children.length > 0 && (
+          <div className="mt-1">
+            {renderCategoryTree(node.children, level + 1)}
+          </div>
+        )}
+      </div>
+    ));
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -252,6 +611,50 @@ export default function Admin() {
           >
             <UserPlus className="w-5 h-5 inline mr-2" />
             Kullanıcılar
+          </button>
+          <button
+            onClick={() => setActiveTab('sla')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'sla'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Clock className="w-5 h-5 inline mr-2" />
+            SLA Planları
+          </button>
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'categories'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <FolderTree className="w-5 h-5 inline mr-2" />
+            Kategoriler
+          </button>
+          <button
+            onClick={() => setActiveTab('automation')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'automation'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <Zap className="w-5 h-5 inline mr-2" />
+            Automation Rules
+          </button>
+          <button
+            onClick={() => setActiveTab('kb')}
+            className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'kb'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <BookOpen className="w-5 h-5 inline mr-2" />
+            Bilgi Bankası
           </button>
         </nav>
       </div>
@@ -366,12 +769,13 @@ export default function Admin() {
                               <th>Kullanici Adi</th>
                               <th>Ad Soyad</th>
                               <th>Rol</th>
+                              <th>İşlemler</th>
                             </tr>
                           </thead>
                           <tbody>
                             {members.map((member) => (
-                              <tr key={member.id}>
-                                <td className="font-mono text-xs">{member.id}</td>
+                              <tr key={member.assignmentId}>
+                                <td className="font-mono text-xs">{member.userId}</td>
                                 <td>{member.username}</td>
                                 <td>{member.displayName || '-'}</td>
                                 <td>
@@ -382,6 +786,16 @@ export default function Admin() {
                                       ? 'Staff'
                                       : 'End User'}
                                   </span>
+                                </td>
+                                <td>
+                                  <button
+                                    onClick={() => removeUserFromDept(dept.id, member.userId)}
+                                    className="text-red-600 hover:text-red-900 text-sm flex items-center"
+                                    title="Departmandan Çıkar"
+                                  >
+                                    <Trash2 size={16} className="mr-1" />
+                                    Çıkar
+                                  </button>
                                 </td>
                               </tr>
                             ))}
@@ -444,6 +858,764 @@ export default function Admin() {
             ))
           )}
         </div>
+        </>
+      )}
+
+      {activeTab === 'sla' && (
+        <>
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Clock className="w-6 h-6 mr-2 text-primary-600" />
+              Yeni SLA Planı Oluştur
+            </h2>
+            <form onSubmit={createSLAPlan} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Plan Adı *
+                  </label>
+                  <input
+                    type="text"
+                    value={newSLAName}
+                    onChange={(e) => setNewSLAName(e.target.value)}
+                    className="input"
+                    placeholder="örn: Standard, Premium, Critical"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Açıklama
+                  </label>
+                  <input
+                    type="text"
+                    value={newSLADescription}
+                    onChange={(e) => setNewSLADescription(e.target.value)}
+                    className="input"
+                    placeholder="Plan açıklaması"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Yanıt Süresi (dakika) *
+                  </label>
+                  <input
+                    type="number"
+                    value={newSLAResponseTime}
+                    onChange={(e) => setNewSLAResponseTime(e.target.value)}
+                    className="input"
+                    placeholder="örn: 60"
+                    min="1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">İlk yanıt için maksimum süre</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Çözüm Süresi (dakika) *
+                  </label>
+                  <input
+                    type="number"
+                    value={newSLAResolutionTime}
+                    onChange={(e) => setNewSLAResolutionTime(e.target.value)}
+                    className="input"
+                    placeholder="örn: 480"
+                    min="1"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Ticket kapatma için maksimum süre</p>
+                </div>
+              </div>
+              <button type="submit" className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                SLA Planı Oluştur
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4">SLA Planları</h2>
+            {loadingSLA ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p className="mt-2 text-gray-600">Yükleniyor...</p>
+              </div>
+            ) : slaPlans.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Henüz SLA planı bulunmuyor.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Plan Adı
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Açıklama
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Yanıt Süresi
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Çözüm Süresi
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İşlemler
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {slaPlans.map((plan) => (
+                      <tr key={plan.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{plan.name}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-500">{plan.description || '-'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {plan.responseTimeMinutes} dk
+                            <span className="text-gray-500 ml-1">
+                              ({Math.floor(plan.responseTimeMinutes / 60)}s {plan.responseTimeMinutes % 60}dk)
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {plan.resolutionTimeMinutes} dk
+                            <span className="text-gray-500 ml-1">
+                              ({Math.floor(plan.resolutionTimeMinutes / 60)}s {plan.resolutionTimeMinutes % 60}dk)
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                          <button
+                            onClick={() => deleteSLAPlan(plan.id)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="card bg-blue-50 border-blue-200">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-2">SLA (Service Level Agreement) Nedir?</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Yanıt Süresi:</strong> Ticket oluşturulduktan sonra ilk yanıt için maksimum süre</li>
+                  <li><strong>Çözüm Süresi:</strong> Ticket'ın tamamen çözülmesi için maksimum süre</li>
+                  <li>SLA planları ticket önceliğine göre otomatik atanabilir</li>
+                  <li>Süre aşımları otomatik olarak monitör edilir ve bildirim gönderilir</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'categories' && (
+        <>
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <FolderTree className="w-6 h-6 mr-2 text-primary-600" />
+              Yeni Kategori Oluştur
+            </h2>
+            <form onSubmit={createCategory} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kategori Adı *
+                  </label>
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className="input"
+                    placeholder="örn: Yazılım, Donanım, İK"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Departman (Opsiyonel)
+                  </label>
+                  <select
+                    value={newCategoryDeptId}
+                    onChange={(e) => setNewCategoryDeptId(e.target.value ? Number(e.target.value) : '')}
+                    className="input"
+                  >
+                    <option value="">Genel (Tüm departmanlar)</option>
+                    {departments.map(dept => (
+                      <option key={dept.id} value={dept.id}>{dept.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Üst Kategori (Opsiyonel)
+                  </label>
+                  <select
+                    value={newCategoryParentId}
+                    onChange={(e) => setNewCategoryParentId(e.target.value ? Number(e.target.value) : '')}
+                    className="input"
+                  >
+                    <option value="">Yok (Ana kategori)</option>
+                    {categories.map(node => (
+                      <option key={node.category.id} value={node.category.id}>
+                        {node.category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <button type="submit" className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Kategori Oluştur
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4">Kategori Hiyerarşisi</h2>
+            {loadingCategories ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p className="mt-2 text-gray-600">Yükleniyor...</p>
+              </div>
+            ) : categories.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Henüz kategori bulunmuyor.</p>
+            ) : (
+              <div className="space-y-2">
+                {renderCategoryTree(categories)}
+              </div>
+            )}
+          </div>
+
+          <div className="card bg-blue-50 border-blue-200">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-2">Kategoriler Nasıl Kullanılır?</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Ana Kategoriler:</strong> Üst kategori seçmeden oluşturulan kategoriler</li>
+                  <li><strong>Alt Kategoriler:</strong> Bir üst kategoriye bağlı kategoriler (hiyerarşik yapı)</li>
+                  <li><strong>Departmana Özel:</strong> Sadece belirli bir departman için görünür kategoriler</li>
+                  <li><strong>Genel Kategoriler:</strong> Tüm departmanlar tarafından kullanılabilir</li>
+                  <li>Ticket oluştururken kullanıcılar kategori seçebilir</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'automation' && (
+        <>
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <Zap className="w-6 h-6 mr-2 text-primary-600" />
+              Yeni Automation Rule Oluştur
+            </h2>
+            <form onSubmit={createAutomationRule} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Rule Adı *
+                  </label>
+                  <input
+                    type="text"
+                    value={newRuleName}
+                    onChange={(e) => setNewRuleName(e.target.value)}
+                    className="input"
+                    placeholder="örn: Yüksek Öncelikli Ticket Bildirimi"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Açıklama
+                  </label>
+                  <input
+                    type="text"
+                    value={newRuleDescription}
+                    onChange={(e) => setNewRuleDescription(e.target.value)}
+                    className="input"
+                    placeholder="Rule açıklaması"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Trigger *
+                  </label>
+                  <select
+                    value={newRuleTrigger}
+                    onChange={(e) => setNewRuleTrigger(Number(e.target.value))}
+                    className="input"
+                    required
+                  >
+                    <option value={0}>Ticket Created</option>
+                    <option value={1}>Ticket Updated</option>
+                    <option value={2}>Status Changed</option>
+                    <option value={3}>Comment Added</option>
+                    <option value={4}>SLA Warning</option>
+                    <option value={5}>Schedule (Cron)</option>
+                    <option value={6}>Inbound Email</option>
+                    <option value={7}>Custom Webhook</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Priority
+                  </label>
+                  <input
+                    type="number"
+                    value={newRulePriority}
+                    onChange={(e) => setNewRulePriority(e.target.value)}
+                    className="input"
+                    placeholder="100"
+                    min="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Düşük değer = yüksek öncelik</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Condition (JSON)
+                  </label>
+                  <textarea
+                    value={newRuleCondition}
+                    onChange={(e) => setNewRuleCondition(e.target.value)}
+                    className="input font-mono text-xs"
+                    rows={6}
+                    placeholder='{"priority": 3, "status": 0}'
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Koşul JSON formatında (örn: priority=3 ve status=0)
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Action (JSON)
+                  </label>
+                  <textarea
+                    value={newRuleAction}
+                    onChange={(e) => setNewRuleAction(e.target.value)}
+                    className="input font-mono text-xs"
+                    rows={6}
+                    placeholder='{"assignTo": "admin", "notify": true}'
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Aksiyon JSON formatında (örn: atama, bildirim, email)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="ruleEnabled"
+                  checked={newRuleEnabled}
+                  onChange={(e) => setNewRuleEnabled(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="ruleEnabled" className="ml-2 text-sm text-gray-700">
+                  Rule aktif (oluşturulduğunda hemen çalışsın)
+                </label>
+              </div>
+
+              <button type="submit" className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Automation Rule Oluştur
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4">Automation Rules</h2>
+            {loadingAutomation ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p className="mt-2 text-gray-600">Yükleniyor...</p>
+              </div>
+            ) : automationRules.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Henüz automation rule bulunmuyor.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Rule Adı
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Trigger
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Priority
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Son Çalıştırma
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Durum
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İşlemler
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {automationRules.map((rule) => {
+                      const triggerNames = [
+                        'Ticket Created',
+                        'Ticket Updated',
+                        'Status Changed',
+                        'Comment Added',
+                        'SLA Warning',
+                        'Schedule (Cron)',
+                        'Inbound Email',
+                        'Custom Webhook',
+                      ];
+                      return (
+                        <tr key={rule.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">{rule.name}</div>
+                            {rule.description && (
+                              <div className="text-xs text-gray-500 mt-1">{rule.description}</div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              {triggerNames[rule.trigger] || `Unknown (${rule.trigger})`}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {rule.priority}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {rule.lastRunAt
+                              ? new Date(rule.lastRunAt).toLocaleString('tr-TR')
+                              : 'Hiç çalışmadı'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <button
+                              onClick={() => toggleAutomationRule(rule.id, !rule.enabled)}
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                rule.enabled
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                              }`}
+                            >
+                              {rule.enabled ? 'Aktif' : 'Pasif'}
+                            </button>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <button
+                              onClick={() => deleteAutomationRule(rule.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="card bg-blue-50 border-blue-200">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-2">Automation Rules Nasıl Çalışır?</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li><strong>Trigger:</strong> Rule'un ne zaman çalışacağını belirler (örn: yeni ticket, durum değişimi)</li>
+                  <li><strong>Condition:</strong> Rule'un çalışması için gerekli koşullar (JSON formatında)</li>
+                  <li><strong>Action:</strong> Koşul sağlandığında yapılacak işlemler (JSON formatında)</li>
+                  <li><strong>Priority:</strong> Birden fazla rule tetiklendiğinde öncelik sırası (düşük sayı = yüksek öncelik)</li>
+                </ul>
+                <p className="mt-3 text-xs">
+                  <strong>Örnek Kullanım:</strong> Yüksek öncelikli ticket oluşturulduğunda otomatik olarak manager'a atama yapabilir veya email bildirimi gönderebilirsiniz.
+                </p>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {activeTab === 'kb' && (
+        <>
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4 flex items-center">
+              <BookOpen className="w-6 h-6 mr-2 text-primary-600" />
+              Yeni Makale Oluştur
+            </h2>
+            <form onSubmit={createArticle} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Başlık *
+                  </label>
+                  <input
+                    type="text"
+                    value={newArticleTitle}
+                    onChange={(e) => setNewArticleTitle(e.target.value)}
+                    className="input"
+                    placeholder="Makale başlığı"
+                    required
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Özet
+                  </label>
+                  <textarea
+                    value={newArticleSummary}
+                    onChange={(e) => setNewArticleSummary(e.target.value)}
+                    className="input"
+                    rows={2}
+                    placeholder="Kısa özet (opsiyonel)"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    İçerik *
+                  </label>
+                  <textarea
+                    value={newArticleContent}
+                    onChange={(e) => setNewArticleContent(e.target.value)}
+                    className="input"
+                    rows={10}
+                    placeholder="Makale içeriği"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Departman
+                  </label>
+                  <select
+                    value={newArticleDeptId}
+                    onChange={(e) => setNewArticleDeptId(e.target.value ? Number(e.target.value) : '')}
+                    className="input"
+                  >
+                    <option value="">Genel (Tüm departmanlar)</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kategori
+                  </label>
+                  <select
+                    value={newArticleCategoryId}
+                    onChange={(e) => setNewArticleCategoryId(e.target.value ? Number(e.target.value) : '')}
+                    className="input"
+                  >
+                    <option value="">Kategori Yok</option>
+                    {categories.map((node) => (
+                      <option key={node.category.id} value={node.category.id}>
+                        {node.category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Durum
+                  </label>
+                  <select
+                    value={newArticleStatus}
+                    onChange={(e) => setNewArticleStatus(Number(e.target.value) as ArticleStatus)}
+                    className="input"
+                  >
+                    <option value={0}>Taslak</option>
+                    <option value={1}>Yayınlandı</option>
+                    <option value={2}>Arşivlendi</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Etiketler (virgülle ayırın)
+                  </label>
+                  <input
+                    type="text"
+                    value={newArticleTags}
+                    onChange={(e) => setNewArticleTags(e.target.value)}
+                    className="input"
+                    placeholder="örn: yazılım, windows, outlook"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="articleFeatured"
+                  checked={newArticleFeatured}
+                  onChange={(e) => setNewArticleFeatured(e.target.checked)}
+                  className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                />
+                <label htmlFor="articleFeatured" className="ml-2 text-sm text-gray-700">
+                  Öne çıkan makale (anasayfada gösterilsin)
+                </label>
+              </div>
+
+              <button type="submit" className="btn-primary">
+                <Plus className="w-4 h-4 mr-2" />
+                Makale Oluştur
+              </button>
+            </form>
+          </div>
+
+          <div className="card">
+            <h2 className="text-xl font-semibold mb-4">Makaleler</h2>
+            {loadingKB ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+                <p className="mt-2 text-gray-600">Yükleniyor...</p>
+              </div>
+            ) : articles.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Henüz makale bulunmuyor.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Başlık
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Departman
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Kategori
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Durum
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Görüntülenme
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        İşlemler
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {articles.map((article) => {
+                      const statusLabels = ['Taslak', 'Yayınlandı', 'Arşivlendi'];
+                      const statusColors = [
+                        'bg-gray-100 text-gray-800',
+                        'bg-green-100 text-green-800',
+                        'bg-yellow-100 text-yellow-800',
+                      ];
+
+                      return (
+                        <tr key={article.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              {article.isFeatured && (
+                                <span className="text-yellow-500 mr-2" title="Öne Çıkan">
+                                  ⭐
+                                </span>
+                              )}
+                              <div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {article.title}
+                                </div>
+                                {article.summary && (
+                                  <div className="text-xs text-gray-500 line-clamp-1">
+                                    {article.summary}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {article.departmentName || '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {article.categoryName || '—'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                statusColors[article.status]
+                              }`}
+                            >
+                              {statusLabels[article.status]}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{article.viewCount} görüntülenme</div>
+                            <div className="text-xs text-gray-500">{article.helpfulCount} faydalı</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <button
+                              onClick={() => deleteArticle(article.id)}
+                              className="text-red-600 hover:text-red-900"
+                              title="Sil"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="card bg-blue-50 border-blue-200">
+            <div className="flex items-start">
+              <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-semibold mb-2">Bilgi Bankası Nasıl Kullanılır?</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>
+                    <strong>Yayınlanan</strong> makaleler kullanıcılar tarafından görülebilir
+                  </li>
+                  <li>
+                    <strong>Taslak</strong> makaleler sadece admin tarafından görülebilir
+                  </li>
+                  <li>
+                    <strong>Öne Çıkan</strong> makaleler Bilgi Bankası anasayfasında üstte gösterilir
+                  </li>
+                  <li>Makaleler departman ve kategorilere göre filtrelenebilir</li>
+                  <li>Slug otomatik olarak başlıktan oluşturulur (URL dostu)</li>
+                </ul>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -624,21 +1796,29 @@ export default function Admin() {
               <div className="flex items-start">
                 <AlertCircle className="w-5 h-5 text-blue-600 mr-2 mt-0.5 flex-shrink-0" />
                 <div className="text-sm text-blue-800">
-                  <p className="font-semibold mb-2">Kullanıcı Oluşturduktan Sonra:</p>
-                  <ol className="list-decimal list-inside space-y-1">
-                    <li><strong>Departmanlar</strong> sekmesine gidin</li>
-                    <li>İlgili departmanı seçip <strong>"Üyeleri Göster"</strong> butonuna tıklayın</li>
-                    <li>En altta <strong>"Kullanıcı Ata"</strong> bölümünden:
+                  <p className="font-semibold mb-2">Sistem Rolleri Hakkında:</p>
+                  <ul className="list-disc list-inside space-y-2">
+                    <li><strong>Herkes EndUser:</strong> Tüm kullanıcılar otomatik olarak EndUser rolüyle oluşturulur ve ticket açabilir.</li>
+                    <li><strong>Departman Rolleri:</strong> Kullanıcıları departmanlara atayarak ticket'ları yönetme yetkisi verebilirsiniz:
                       <ul className="list-disc list-inside ml-4 mt-1">
-                        <li>Kullanıcıyı dropdown'dan seçin</li>
-                        <li>Rol seçin (Departman Yöneticisi, Çalışan, veya Son Kullanıcı)</li>
-                        <li><strong>"Ata"</strong> butonuna tıklayın</li>
+                        <li><strong>Departman Yöneticisi:</strong> Departman ticket'larını tam yönetim (atama, durum değiştirme, çözme)</li>
+                        <li><strong>Departman Çalışanı:</strong> Departman ticket'larını çözebilir ve güncelleyebilir</li>
                       </ul>
                     </li>
+                    <li><strong>Ticket Mantığı:</strong>
+                      <ul className="list-disc list-inside ml-4 mt-1">
+                        <li>Herkes herhangi bir departmana ticket oluşturabilir</li>
+                        <li>Sadece o departmana atanan Manager/Staff ticket'ı yönetebilir ve çözebilir</li>
+                        <li>Ticket sahibi kendi ticket'ını görebilir ama düzenleyemez</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  <p className="mt-3 font-semibold">Departmana Kullanıcı Atamak İçin:</p>
+                  <ol className="list-decimal list-inside space-y-1 mt-1">
+                    <li><strong>Departmanlar</strong> sekmesine gidin</li>
+                    <li>Departmanın <strong>"Üyeleri Göster"</strong> butonuna tıklayın</li>
+                    <li>Altta <strong>"Kullanıcı Ata"</strong> bölümünden kullanıcıyı seçip rol atayın</li>
                   </ol>
-                  <p className="mt-3 text-xs">
-                    <strong>Not:</strong> Son Kullanıcı rolü, normal şirket çalışanları için kullanılır. Talep oluşturabilir ve kendi taleplerini görüntüleyebilirler.
-                  </p>
                 </div>
               </div>
             </div>

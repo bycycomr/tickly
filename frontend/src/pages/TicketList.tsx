@@ -45,7 +45,6 @@ const priorityColors: Record<number, string> = {
 export default function TicketList() {
   const navigate = useNavigate()
   const [tickets, setTickets] = useState<Ticket[]>([])
-  const [filteredTickets, setFilteredTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -60,9 +59,12 @@ export default function TicketList() {
     setLoading(true)
     setError(null)
     try {
-      const res = await api.getTickets()
+      const res = await api.getTickets({
+        status: statusFilter !== 'all' ? statusFilter as number : undefined,
+        priority: priorityFilter !== 'all' ? priorityFilter as number : undefined,
+        search: search || undefined
+      })
       setTickets(res)
-      setFilteredTickets(res)
     } catch (e: any) {
       console.error(e)
       setError(e?.response?.data?.error || 'Ticket listesi yüklenemedi')
@@ -71,33 +73,11 @@ export default function TicketList() {
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [statusFilter, priorityFilter, search])
 
-  useEffect(() => {
-    let result = [...tickets]
-    
-    if (search) {
-      result = result.filter(t => 
-        t.title.toLowerCase().includes(search.toLowerCase()) ||
-        (t.description && t.description.toLowerCase().includes(search.toLowerCase()))
-      )
-    }
-    
-    if (statusFilter !== 'all') {
-      result = result.filter(t => t.status === statusFilter)
-    }
-    
-    if (priorityFilter !== 'all') {
-      result = result.filter(t => t.priority === priorityFilter)
-    }
-    
-    setFilteredTickets(result)
-    setCurrentPage(1)
-  }, [search, statusFilter, priorityFilter, tickets])
-
-  const totalPages = Math.ceil(filteredTickets.length / itemsPerPage)
+  const totalPages = Math.ceil(tickets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const paginatedTickets = filteredTickets.slice(startIndex, startIndex + itemsPerPage)
+  const paginatedTickets = tickets.slice(startIndex, startIndex + itemsPerPage)
 
   return (
     <div className="space-y-6">
@@ -106,7 +86,7 @@ export default function TicketList() {
           <List className="w-8 h-8 text-primary-600" />
           <h1 className="text-3xl font-bold text-gray-900">Talepler</h1>
         </div>
-        <span className="text-sm text-gray-500">{filteredTickets.length} talep</span>
+        <span className="text-sm text-gray-500">{tickets.length} talep</span>
       </div>
 
       <div className="card">
@@ -167,7 +147,7 @@ export default function TicketList() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
             {error}
           </div>
-        ) : filteredTickets.length === 0 ? (
+        ) : tickets.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             Henüz talep bulunmuyor.
           </div>
@@ -283,9 +263,9 @@ export default function TicketList() {
                 <div className="text-sm text-gray-700 text-center sm:text-left">
                   <span className="font-medium">{startIndex + 1}</span>
                   {' - '}
-                  <span className="font-medium">{Math.min(startIndex + itemsPerPage, filteredTickets.length)}</span>
+                  <span className="font-medium">{Math.min(startIndex + itemsPerPage, tickets.length)}</span>
                   {' / '}
-                  <span className="font-medium">{filteredTickets.length}</span>
+                  <span className="font-medium">{tickets.length}</span>
                   {' talep'}
                 </div>
                 <div className="flex space-x-2">

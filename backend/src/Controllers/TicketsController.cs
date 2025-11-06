@@ -16,17 +16,20 @@ namespace Tickly.Api.Controllers
         private readonly TicketWorkflowService _workflow;
         private readonly AuditService _audit;
         private readonly AutomationService _automation;
+        private readonly SLAMonitoringService _slaService;
 
         public TicketsController(
             AppDbContext db, 
             TicketWorkflowService workflow, 
             AuditService audit,
-            AutomationService automation)
+            AutomationService automation,
+            SLAMonitoringService slaService)
         {
             _db = db;
             _workflow = workflow;
             _audit = audit;
             _automation = automation;
+            _slaService = slaService;
         }
 
         // Helper: get user id from token (sub)
@@ -60,7 +63,11 @@ namespace Tickly.Api.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int? status = null,
+            [FromQuery] int? priority = null,
+            [FromQuery] int? departmentId = null,
+            [FromQuery] string? search = null)
         {
             // Authorization scoping:
             // - SuperAdmin: all tickets
@@ -69,32 +76,54 @@ namespace Tickly.Api.Controllers
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
 
-            if (IsSuperAdmin())
-            {
-                var all = await _db.Tickets.OrderByDescending(t => t.CreatedAt).ToListAsync();
-                return Ok(all);
-            }
+            IQueryable<Ticket> query;
 
             if (IsSuperAdmin())
             {
-                var all = await _db.Tickets.OrderByDescending(t => t.CreatedAt).ToListAsync();
-                return Ok(all);
-            }
-
-            var deptRoles = GetDeptRoles();
-            var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
-
-            var query = _db.Tickets.AsQueryable();
-            if (allowedDeptIds.Any())
-            {
-                query = query.Where(t => (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value))
-                                         || t.AssignedToUserId == userId
-                                         || t.CreatorId == userId);
+                query = _db.Tickets.AsQueryable();
             }
             else
             {
-                // no department roles – only tickets assigned to the current user or created by them
-                query = query.Where(t => t.AssignedToUserId == userId || t.CreatorId == userId);
+                var deptRoles = GetDeptRoles();
+                var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
+
+                query = _db.Tickets.AsQueryable();
+                if (allowedDeptIds.Any())
+                {
+                    query = query.Where(t => (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value))
+                                             || t.AssignedToUserId == userId
+                                             || t.CreatorId == userId);
+                }
+                else
+                {
+                    // no department roles – only tickets assigned to the current user or created by them
+                    query = query.Where(t => t.AssignedToUserId == userId || t.CreatorId == userId);
+                }
+            }
+
+            // Apply filters
+            if (status.HasValue)
+            {
+                query = query.Where(t => t.Status == (TicketStatus)status.Value);
+            }
+
+            if (priority.HasValue)
+            {
+                query = query.Where(t => t.Priority == (TicketPriority)priority.Value);
+            }
+
+            if (departmentId.HasValue)
+            {
+                query = query.Where(t => t.DepartmentId == departmentId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchLower = search.ToLower();
+                query = query.Where(t =>
+                    t.Title.ToLower().Contains(searchLower) ||
+                    (t.Description != null && t.Description.ToLower().Contains(searchLower))
+                );
             }
 
             var list = await query.OrderByDescending(t => t.CreatedAt).ToListAsync();
@@ -127,19 +156,31 @@ namespace Tickly.Api.Controllers
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
 
-            if (!IsSuperAdmin())
-            {
-                // Ensure user has rights to create in this department (if specified)
-                var deptRoles = GetDeptRoles();
-                var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
-                if (ticket.DepartmentId != null && !allowedDeptIds.Contains(ticket.DepartmentId.Value))
-                {
-                    return Forbid();
-                }
-            }
+            // Herkes (EndUser) ticket oluşturabilir, departman kontrolü gerekmez
+            // Ticket oluşturulduğunda ilgili departman üyeleri yönetebilecek
 
             // set creator
             ticket.CreatorId = userId;
+
+            // Auto-assign SLA based on priority if not specified
+            if (!ticket.SLAPlanId.HasValue)
+            {
+                var defaultSLA = await GetDefaultSLAForPriority(ticket.TenantId, ticket.Priority);
+                if (defaultSLA != null)
+                {
+                    ticket.SLAPlanId = defaultSLA.Id;
+                }
+            }
+
+            // Calculate DueAt based on SLA
+            if (ticket.SLAPlanId.HasValue)
+            {
+                var slaPlan = await _db.SLAPlans.FindAsync(ticket.SLAPlanId.Value);
+                if (slaPlan != null)
+                {
+                    ticket.DueAt = _slaService.CalculateSLADueDate(slaPlan, ticket.CreatedAt);
+                }
+            }
 
             _db.Tickets.Add(ticket);
             await _db.SaveChangesAsync();
@@ -168,16 +209,23 @@ namespace Tickly.Api.Controllers
             if (t == null) return NotFound();
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
+            
             if (!IsSuperAdmin())
             {
                 var deptRoles = GetDeptRoles();
                 var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
 
-                // allow if assigned to user or user has department privileges
+                // Sadece departman üyeleri (Manager/Staff) veya atanan kişi güncelleyebilir
+                // Ticket oluşturan kişi (Creator) güncelleyemez
                 var hasDeptAccess = t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value);
-                if (!hasDeptAccess && t.AssignedToUserId != userId)
+                var isAssigned = t.AssignedToUserId == userId;
+                
+                if (!hasDeptAccess && !isAssigned)
                     return Forbid();
             }
+
+            var oldSLAPlanId = t.SLAPlanId;
+            var oldPriority = t.Priority;
 
             t.Title = input.Title;
             t.Description = input.Description;
@@ -185,6 +233,29 @@ namespace Tickly.Api.Controllers
             t.Status = input.Status;
             t.AssignedToUserId = input.AssignedToUserId;
             t.EstimatedResolutionAt = input.EstimatedResolutionAt;
+
+            // Update SLA if provided
+            if (input.SLAPlanId.HasValue && input.SLAPlanId != oldSLAPlanId)
+            {
+                t.SLAPlanId = input.SLAPlanId;
+                
+                // Recalculate DueAt
+                var slaPlan = await _db.SLAPlans.FindAsync(input.SLAPlanId.Value);
+                if (slaPlan != null)
+                {
+                    t.DueAt = _slaService.CalculateSLADueDate(slaPlan, t.CreatedAt);
+                }
+            }
+            // If priority changed and no explicit SLA set, recalculate
+            else if (t.Priority != oldPriority && !t.SLAPlanId.HasValue)
+            {
+                var defaultSLA = await GetDefaultSLAForPriority(t.TenantId, t.Priority);
+                if (defaultSLA != null)
+                {
+                    t.SLAPlanId = defaultSLA.Id;
+                    t.DueAt = _slaService.CalculateSLADueDate(defaultSLA, t.CreatedAt);
+                }
+            }
 
             await _db.SaveChangesAsync();
 
@@ -358,6 +429,48 @@ namespace Tickly.Api.Controllers
             }
 
             return Ok(events);
+        }
+
+        // Helper: Get default SLA plan based on priority
+        private async Task<SLAPlan?> GetDefaultSLAForPriority(Guid tenantId, TicketPriority priority)
+        {
+            // Priority-based SLA mapping (configurable in future via database)
+            var slaName = priority switch
+            {
+                TicketPriority.Critical => "Critical",
+                TicketPriority.Urgent => "Urgent",
+                TicketPriority.High => "High Priority",
+                TicketPriority.Normal => "Standard",
+                TicketPriority.Low => "Standard",
+                _ => "Standard"
+            };
+
+            var slaPlan = await _db.SLAPlans
+                .Where(s => s.TenantId == tenantId && s.IsActive && s.Name.Contains(slaName))
+                .OrderBy(s => s.ResponseTimeMinutes)
+                .FirstOrDefaultAsync();
+
+            // Fallback to any active SLA for the tenant
+            if (slaPlan == null)
+            {
+                slaPlan = await _db.SLAPlans
+                    .Where(s => s.TenantId == tenantId && s.IsActive)
+                    .OrderBy(s => s.ResponseTimeMinutes)
+                    .FirstOrDefaultAsync();
+            }
+
+            return slaPlan;
+        }
+
+        // SLA Plans - Read access for all authenticated users
+        [HttpGet("sla-plans")]
+        public async Task<IActionResult> GetSLAPlans()
+        {
+            var plans = await _db.SLAPlans
+                .Where(s => s.IsActive)
+                .OrderBy(s => s.Name)
+                .ToListAsync();
+            return Ok(plans);
         }
     }
 
