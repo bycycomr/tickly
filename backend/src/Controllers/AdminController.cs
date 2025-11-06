@@ -9,7 +9,7 @@ namespace Tickly.Api.Controllers
 {
     [ApiController]
     [Route("api/admin")]
-    [Authorize(Policy = "SuperAdminOnly")]
+    [Authorize] // Genel authorize, her endpoint kendi policy'sini belirler
     public class AdminController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -30,6 +30,7 @@ namespace Tickly.Api.Controllers
         }
 
         [HttpPost("departments")]
+        [Authorize(Policy = "SuperAdminOnly")]
         public IActionResult CreateDepartment([FromBody] CreateDepartmentDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest(new { error = "Name required" });
@@ -40,6 +41,7 @@ namespace Tickly.Api.Controllers
         }
 
         [HttpPut("departments/{id}")]
+        [Authorize(Policy = "SuperAdminOnly")]
         public IActionResult UpdateDepartment(int id, [FromBody] CreateDepartmentDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Name)) return BadRequest(new { error = "Name required" });
@@ -55,6 +57,7 @@ namespace Tickly.Api.Controllers
         }
 
         [HttpDelete("departments/{id}")]
+        [Authorize(Policy = "SuperAdminOnly")]
         public IActionResult DeleteDepartment(int id)
         {
             var dept = _db.Departments.Find(id);
