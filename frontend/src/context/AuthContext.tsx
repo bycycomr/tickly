@@ -9,8 +9,10 @@ type UserInfo = {
   email: string;
   displayName: string;
   tenantId: string;
+  departmentId?: number;
   roles?: string[];
   deptRole?: string;
+  departmentRoles?: Array<{ departmentId: number; role: string }>;
 };
 
 type AuthContextType = {

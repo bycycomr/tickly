@@ -341,6 +341,62 @@ namespace Tickly.Api.Services
                 _ => "Bilinmiyor"
             };
         }
+
+        public async Task SendPasswordResetEmailAsync(string recipientEmail, string resetLink, string displayName)
+        {
+            var subject = "Tickly - Şifre Sıfırlama Talebi";
+            var body = GetPasswordResetTemplate(resetLink, displayName);
+
+            await SendEmailAsync(recipientEmail, subject, body);
+        }
+
+        private string GetPasswordResetTemplate(string resetLink, string displayName)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .button {{ display: inline-block; padding: 12px 30px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 14px; }}
+        .warning {{ background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🔐 Şifre Sıfırlama</h1>
+        </div>
+        <div class='content'>
+            <p>Merhaba <strong>{displayName}</strong>,</p>
+            
+            <p>Tickly hesabınız için şifre sıfırlama talebinde bulundunuz. Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
+            
+            <div style='text-align: center;'>
+                <a href='{resetLink}' class='button'>Şifremi Sıfırla</a>
+            </div>
+            
+            <div class='warning'>
+                <strong>⚠️ Önemli:</strong> Bu link 1 saat geçerlidir. Eğer şifre sıfırlama talebi siz değilseniz, bu e-postayı görmezden gelebilirsiniz.
+            </div>
+            
+            <p>Buton çalışmıyorsa, aşağıdaki linki tarayıcınıza kopyalayın:</p>
+            <p style='word-break: break-all; background: #fff; padding: 10px; border-radius: 4px; font-size: 12px;'>{resetLink}</p>
+            
+            <p>İyi çalışmalar,<br><strong>Tickly Ekibi</strong></p>
+        </div>
+        <div class='footer'>
+            <p>Bu bir otomatik e-postadır, lütfen yanıtlamayın.</p>
+            <p>© 2025 Tickly. Tüm hakları saklıdır.</p>
+        </div>
+    </div>
+</body>
+</html>";
+        }
     }
 }
-

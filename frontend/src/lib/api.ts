@@ -98,6 +98,19 @@ class ApiClient {
     return response.data;
   }
 
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const response = await this.client.post<{ message: string }>('/api/auth/forgot-password', { email });
+    return response.data;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+    const response = await this.client.post<{ message: string }>('/api/auth/reset-password', { 
+      token, 
+      newPassword 
+    });
+    return response.data;
+  }
+
   // Tickets
   async getTickets(params?: {
     status?: number;
@@ -137,7 +150,7 @@ class ApiClient {
 
   async assignTicket(id: number, assigneeId: string): Promise<TicketEvent> {
     const response = await this.client.post<TicketEvent>(`/api/tickets/${id}/assign`, {
-      assigneeId,
+      assigneeId: assigneeId,  // Backend expects 'assigneeId' (camelCase with JSON serialization)
     });
     return response.data;
   }
@@ -240,6 +253,11 @@ class ApiClient {
 
   async removeUserFromDepartment(departmentId: number, userId: string): Promise<void> {
     await this.client.delete(`/api/admin/departments/${departmentId}/users/${userId}`);
+  }
+
+  async removeDepartmentStaff(departmentId: number, userId: string): Promise<void> {
+    // DepartmentManager için endpoint (admin olmayan)
+    await this.client.delete(`/api/departments/${departmentId}/users/${userId}`);
   }
 
   async assignGlobalRole(userId: string, role: string): Promise<void> {

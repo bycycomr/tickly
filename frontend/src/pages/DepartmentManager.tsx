@@ -13,8 +13,11 @@ import {
   BarChart3,
   UserPlus,
   Trash2,
+  Settings,
+  FolderTree,
+  Zap,
 } from 'lucide-react';
-import type { Ticket, Department } from '../lib/types';
+import type { Ticket, Department, Category, SLAPlan, AutomationRule } from '../lib/types';
 import { TicketStatus, TicketPriority } from '../lib/types';
 
 type DepartmentStats = {
@@ -43,13 +46,24 @@ export default function DepartmentManager() {
   const [stats, setStats] = useState<DepartmentStats | null>(null);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'tickets' | 'staff'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tickets' | 'staff' | 'categories' | 'settings'>('overview');
 
   // Staff management
   const [showAddStaff, setShowAddStaff] = useState(false);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedRole, setSelectedRole] = useState('DepartmentStaff');
+  
+  // Category management
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  
+  // SLA Plans
+  const [slaPlans, setSlaPlans] = useState<SLAPlan[]>([]);
+  
+  // Department settings
+  const [deptDescription, setDeptDescription] = useState('');
 
   useEffect(() => {
     loadDepartmentData();
@@ -94,6 +108,12 @@ export default function DepartmentManager() {
 
       // Load staff members
       await loadStaffMembers(userDept.id);
+      
+      // Load categories
+      await loadCategories();
+      
+      // Load SLA plans
+      await loadSLAPlans();
     } catch (error) {
       console.error('Error loading department data:', error);
       toast.error('Departman bilgileri yüklenemedi');
@@ -160,21 +180,85 @@ export default function DepartmentManager() {
     }
   }
 
-  async function handleRemoveStaff(assignmentId: number) {
+  async function handleRemoveStaff(userId: string) {
+    if (!department) return;
+    
     if (!confirm('Bu personeli departmandan çıkarmak istediğinize emin misiniz?')) {
       return;
     }
 
     try {
-      // TODO: API method needed
-      // await api.removeDepartmentRole(assignmentId);
-      toast.error('Bu özellik henüz backend\'de implement edilmemiş');
-      // toast.success('Personel departmandan çıkarıldı');
-      // if (department) {
-      //   loadStaffMembers(department.id);
-      // }
+      await api.removeDepartmentStaff(department.id, userId);
+      toast.success('Personel departmandan çıkarıldı');
+      loadStaffMembers(department.id);
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'Personel çıkarılamadı');
+      toast.error(error?.response?.data?.error || 'Personel çıkarılamadı');
+    }
+  }
+
+  async function loadCategories() {
+    try {
+      const allCategories = await api.getCategories();
+      const deptCategories = allCategories.filter((c: Category) => 
+        c.departmentId === department?.id || !c.departmentId
+      );
+      setCategories(deptCategories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  }
+
+  async function loadSLAPlans() {
+    try {
+      const plans = await api.getSLAPlans();
+      setSlaPlans(plans);
+    } catch (error) {
+      console.error('Error loading SLA plans:', error);
+    }
+  }
+
+  async function handleCreateCategory() {
+    if (!newCategoryName.trim() || !department) {
+      toast.error('Kategori adı gereklidir');
+      return;
+    }
+
+    try {
+      await api.createCategory({
+        name: newCategoryName.trim(),
+        departmentId: department.id,
+      });
+      toast.success('Kategori oluşturuldu');
+      setNewCategoryName('');
+      setShowAddCategory(false);
+      loadCategories();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Kategori oluşturulamadı');
+    }
+  }
+
+  async function handleDeleteCategory(categoryId: number) {
+    if (!confirm('Bu kategoriyi silmek istediğinize emin misiniz?')) {
+      return;
+    }
+
+    try {
+      await api.deleteCategory(categoryId);
+      toast.success('Kategori silindi');
+      loadCategories();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'Kategori silinemedi');
+    }
+  }
+
+  async function handleUpdateDepartment() {
+    if (!department) return;
+
+    try {
+      // TODO: API method for updating department description
+      toast('Departman güncelleme özelliği yakında eklenecek', { icon: 'ℹ️' });
+    } catch (error: any) {
+      toast.error('Departman güncellenemedi');
     }
   }
 
@@ -362,6 +446,28 @@ export default function DepartmentManager() {
             >
               <Users className="inline-block mr-2 h-5 w-5" />
               Personel ({staffMembers.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'categories'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <FolderTree className="inline-block mr-2 h-5 w-5" />
+              Kategoriler ({categories.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'settings'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              <Settings className="inline-block mr-2 h-5 w-5" />
+              Ayarlar
             </button>
           </nav>
         </div>
@@ -638,7 +744,7 @@ export default function DepartmentManager() {
                           </td>
                           <td>
                             <button
-                              onClick={() => handleRemoveStaff(member.assignmentId)}
+                              onClick={() => handleRemoveStaff(member.userId)}
                               className="text-red-600 hover:text-red-800"
                               title="Departmandan Çıkar"
                             >
@@ -650,6 +756,214 @@ export default function DepartmentManager() {
                     )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Departman Kategorileri
+              </h3>
+              <button
+                onClick={() => setShowAddCategory(!showAddCategory)}
+                className="btn btn-primary"
+              >
+                <FolderTree size={18} className="mr-2" />
+                Kategori Ekle
+              </button>
+            </div>
+
+            {showAddCategory && (
+              <div className="card bg-green-50 border-green-200">
+                <h4 className="text-md font-semibold text-gray-900 mb-4">
+                  Yeni Kategori Ekle
+                </h4>
+                <div className="flex gap-4">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    className="input flex-1"
+                    placeholder="Kategori adı..."
+                  />
+                  <button
+                    onClick={handleCreateCategory}
+                    disabled={!newCategoryName.trim()}
+                    className="btn btn-primary"
+                  >
+                    Oluştur
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddCategory(false);
+                      setNewCategoryName('');
+                    }}
+                    className="btn btn-secondary"
+                  >
+                    İptal
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="card">
+              {categories.length === 0 ? (
+                <p className="text-center py-8 text-gray-500">
+                  Henüz kategori bulunmuyor
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map((category) => (
+                    <div
+                      key={category.id}
+                      className="border border-gray-200 rounded-lg p-4 hover:border-primary-300 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FolderTree size={18} className="text-primary-600" />
+                            <h4 className="font-semibold text-gray-900">
+                              {category.name}
+                            </h4>
+                          </div>
+                          {category.departmentId && (
+                            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                              Departman Kategorisi
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleDeleteCategory(category.id)}
+                          className="text-red-600 hover:text-red-800 ml-2"
+                          title="Sil"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Departman Ayarları
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="label">Departman Adı</label>
+                  <input
+                    type="text"
+                    value={department?.name || ''}
+                    disabled
+                    className="input bg-gray-100"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Departman adını değiştirmek için sistem yöneticisine başvurun
+                  </p>
+                </div>
+                <div>
+                  <label className="label">Açıklama</label>
+                  <textarea
+                    value={deptDescription || department?.description || ''}
+                    onChange={(e) => setDeptDescription(e.target.value)}
+                    className="input"
+                    rows={3}
+                    placeholder="Departman açıklaması..."
+                  />
+                </div>
+                <button
+                  onClick={handleUpdateDepartment}
+                  className="btn btn-primary"
+                >
+                  <Settings size={18} className="mr-2" />
+                  Kaydet
+                </button>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                SLA Planları
+              </h3>
+              {slaPlans.length === 0 ? (
+                <p className="text-gray-500">
+                  Henüz SLA planı bulunmuyor. Sistem yöneticisi ile iletişime geçin.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {slaPlans.map((plan) => (
+                    <div
+                      key={plan.id}
+                      className="border border-gray-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{plan.name}</h4>
+                          {plan.description && (
+                            <p className="text-sm text-gray-600 mt-1">{plan.description}</p>
+                          )}
+                          <div className="flex gap-4 mt-2 text-sm">
+                            <span className="text-gray-600">
+                              <Clock size={14} className="inline mr-1" />
+                              Yanıt: {Math.floor(plan.responseTimeMinutes / 60)}sa
+                            </span>
+                            <span className="text-gray-600">
+                              <CheckCircle size={14} className="inline mr-1" />
+                              Çözüm: {Math.floor(plan.resolutionTimeMinutes / 60)}sa
+                            </span>
+                          </div>
+                        </div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            plan.isActive
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                          }`}
+                        >
+                          {plan.isActive ? 'Aktif' : 'Pasif'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="card bg-yellow-50 border-yellow-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2 flex items-center">
+                <AlertCircle size={20} className="mr-2 text-yellow-600" />
+                İstatistikler
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                <div>
+                  <p className="text-sm text-gray-600">Departman ID</p>
+                  <p className="text-xl font-bold text-gray-900">#{department?.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Toplam Personel</p>
+                  <p className="text-xl font-bold text-gray-900">{staffMembers.length}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Toplam Kategori</p>
+                  <p className="text-xl font-bold text-gray-900">{categories.length}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Oluşturma Tarihi</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {department?.createdAt
+                      ? new Date(department.createdAt).toLocaleDateString('tr-TR')
+                      : '-'}
+                  </p>
+                </div>
               </div>
             </div>
           </div>

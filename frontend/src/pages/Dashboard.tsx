@@ -22,7 +22,6 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [userDepartment, setUserDepartment] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     loadDashboard();
@@ -33,12 +32,13 @@ export default function Dashboard() {
       setLoading(true);
       
       // Kullanıcının departmanını ve rolünü kontrol et
-      // Eğer SuperAdmin değilse, departman bazlı stats çek
       const isSuperAdmin = user?.roles?.includes('SuperAdmin');
+      const userDepartmentId = user?.departmentId;
       
-      // Eğer kullanıcı bir departmana atanmışsa, o departmanın stats'ını göster
-      // Bu bilgiyi user context'ten veya API'den alabiliriz
-      const data = await api.getDashboardStats(undefined, userDepartment);
+      // Eğer SuperAdmin değilse ve bir departmana atanmışsa, o departmanın stats'ını göster
+      const departmentFilter = !isSuperAdmin && userDepartmentId ? userDepartmentId : undefined;
+      
+      const data = await api.getDashboardStats(undefined, departmentFilter);
       setStats(data);
     } catch (err: any) {
       setError('Dashboard yüklenemedi');

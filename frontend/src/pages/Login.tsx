@@ -119,6 +119,15 @@ export default function Login() {
           </button>
         </form>
 
+        <div className="mt-4 text-center">
+          <Link 
+            to="/forgot-password" 
+            className="text-sm text-gray-600 hover:text-primary-600 transition-colors"
+          >
+            Şifremi unuttum
+          </Link>
+        </div>
+
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Hesabınız yok mu?{' '}

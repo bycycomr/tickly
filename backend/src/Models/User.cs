@@ -31,5 +31,9 @@ namespace Tickly.Api.Models
         public DateTime? LastLoginAt { get; set; }
         public string? MetadataJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Password Reset
+        public string? PasswordResetToken { get; set; }
+        public DateTime? PasswordResetTokenExpiry { get; set; }
     }
 }

@@ -10,5 +10,6 @@ namespace Tickly.Api.Services
         Task SendTicketAssignedEmailAsync(Ticket ticket, User assignee);
         Task SendCommentAddedEmailAsync(Ticket ticket, TicketEvent comment, string recipientEmail);
         Task SendSLAViolationWarningAsync(Ticket ticket, string recipientEmail, string violationType);
+        Task SendPasswordResetEmailAsync(string recipientEmail, string resetLink, string displayName);
     }
 }
