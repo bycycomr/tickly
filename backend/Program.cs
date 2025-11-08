@@ -141,7 +141,7 @@ builder.Services.AddCors(options =>
 	options.AddPolicy(name: corsPolicyName,
 		policy =>
 		{
-			policy.WithOrigins("http://localhost:5173", "http://localhost:80")
+			policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
 				.AllowAnyHeader()
 				.AllowAnyMethod()
 				.AllowCredentials(); // SignalR için gerekli
