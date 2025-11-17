@@ -2,12 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/ticket_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/ticket_list_screen.dart';
 import 'screens/create_ticket_screen.dart';
 import 'screens/ticket_detail_screen.dart';
+import 'screens/dashboard_screen.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize notification service
+  final notificationService = NotificationService();
+  await notificationService.initializeLocalNotifications();
+  await notificationService.requestPermissions();
+  
   runApp(const TicklyApp());
 }
 
@@ -18,54 +28,35 @@ class TicklyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
       ],
-      child: MaterialApp(
-        title: 'Tickly',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-          ),
-          cardTheme: CardTheme(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-          inputDecorationTheme: InputDecorationTheme(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            filled: true,
-            fillColor: Colors.grey[50],
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ),
-        home: const SplashScreen(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/tickets': (context) => const TicketListScreen(),
-          '/create-ticket': (context) => const CreateTicketScreen(),
-        },
-        onGenerateRoute: (settings) {
-          if (settings.name == '/ticket-detail') {
-            final ticketId = settings.arguments as int;
-            return MaterialPageRoute(
-              builder: (context) => TicketDetailScreen(ticketId: ticketId),
-            );
-          }
-          return null;
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'Tickly',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeProvider.lightTheme,
+            darkTheme: ThemeProvider.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const SplashScreen(),
+            routes: {
+              '/login': (context) => const LoginScreen(),
+              '/tickets': (context) => const TicketListScreen(),
+              '/create-ticket': (context) => const CreateTicketScreen(),
+              '/dashboard': (context) => const DashboardScreen(),
+            },
+            onGenerateRoute: (settings) {
+              if (settings.name == '/ticket-detail') {
+                final ticketId = settings.arguments as int;
+                return MaterialPageRoute(
+                  builder: (context) => TicketDetailScreen(ticketId: ticketId),
+                );
+              }
+              return null;
+            },
+          );
         },
       ),
     );

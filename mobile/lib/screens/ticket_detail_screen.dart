@@ -136,7 +136,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           children: [
                             _buildInfoRow('Departman', ticket.departmentName ?? '-'),
                             _buildInfoRow('Kategori', ticket.categoryName ?? '-'),
-                            _buildInfoRow('Atanan', ticket.assignedToDisplayName ?? 'Atanmadı'),
+                            _buildInfoRow('Atanan', ticket.assignedToName ?? 'Atanmadı'),
                             _buildInfoRow('Oluşturulma', _formatDateTime(ticket.createdAt)),
                             if (ticket.updatedAt != null)
                               _buildInfoRow('Güncelleme', _formatDateTime(ticket.updatedAt!)),
@@ -285,7 +285,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Widget _buildStatusChip(int status, String text) {
-    Color color;
+    MaterialColor color;
     switch (status) {
       case 0:
         color = Colors.blue;
@@ -311,7 +311,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 
   Widget _buildPriorityChip(int priority, String text) {
-    Color color;
+    MaterialColor color;
     switch (priority) {
       case 0:
         color = Colors.green;

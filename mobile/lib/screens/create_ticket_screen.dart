@@ -184,7 +184,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
                     labelText: 'Kategori',
                     border: OutlineInputBorder(),
                   ),
-                  items: ticketProvider.categories.map((cat) {
+                  items: ticketProvider.categories.map<DropdownMenuItem<int>>((cat) {
                     return DropdownMenuItem<int>(
                       value: cat.id,
                       child: Text(cat.name),

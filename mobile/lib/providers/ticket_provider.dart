@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/ticket.dart';
 import '../models/comment.dart';
 import '../models/department.dart';
-import '../models/category.dart';
+import '../models/category.dart' as models;
 import '../services/ticket_service.dart';
 import '../services/data_service.dart';
 
@@ -14,7 +14,7 @@ class TicketProvider with ChangeNotifier {
   Ticket? _selectedTicket;
   List<TicketComment> _comments = [];
   List<Department> _departments = [];
-  List<Category> _categories = [];
+  List<models.Category> _categories = [];
   
   bool _isLoading = false;
   String? _error;
@@ -29,7 +29,7 @@ class TicketProvider with ChangeNotifier {
   Ticket? get selectedTicket => _selectedTicket;
   List<TicketComment> get comments => _comments;
   List<Department> get departments => _departments;
-  List<Category> get categories => _categories;
+  List<models.Category> get categories => _categories;
   bool get isLoading => _isLoading;
   String? get error => _error;
 

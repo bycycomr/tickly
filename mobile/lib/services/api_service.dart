@@ -16,6 +16,14 @@ class ApiService {
   
   // Public getter to check if user is logged in
   bool get hasToken => _token != null && _token!.isNotEmpty;
+  
+  // Get current token
+  Future<String?> getToken() async {
+    if (_token == null) {
+      await loadToken();
+    }
+    return _token;
+  }
 
   // Token'ı yükle
   Future<void> loadToken() async {
