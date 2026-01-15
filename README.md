@@ -1,267 +1,394 @@
-# Tickly Proje Dokümantasyonu
+<div align="center">
 
-Bu klasör, Tickly Help Desk Sistemi ve Mobil Uygulaması için profesyonel proje dökümanlarını içerir.
+# 🎫 Tickly
 
-## 📄 Dosyalar
+### Modern Help Desk & Ticket Management System
 
-### Backend & Frontend Dökümanları
+[![ASP.NET Core](https://img.shields.io/badge/ASP.NET%20Core-8.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 
-#### 1. LaTeX Dökümanı (.tex)
-- **Dosya:** `Tickly_Proje_Dokumani.tex`
-- **Format:** LaTeX kaynak dosyası
-- **Kullanım:** Backend ve Frontend için akademik/profesyonel PDF dökümanı
-
-#### 2. Word Dökümanı (.docx)
-- **Dosya:** `Tickly_Proje_Dokumani.docx`
-- **Format:** Microsoft Word 2016+
-- **Kullanım:** Backend ve Frontend için düzenlenebilir Word formatı
-
-### Mobil Uygulama Dökümanları
-
-#### 3. Mobile LaTeX Dökümanı (.tex)
-- **Dosya:** `Tickly_Mobile_Dokumani.tex`
-- **Format:** LaTeX kaynak dosyası
-- **Kullanım:** Flutter iOS uygulaması için akademik/profesyonel PDF
-
-#### 4. Mobile Word Dökümanı (.docx)
-- **Dosya:** `Tickly_Mobile_Dokumani.docx`
-- **Format:** Microsoft Word 2016+
-- **Kullanım:** Flutter iOS uygulaması için düzenlenebilir döküman
-
-### Yardımcı Dosyalar
-
-#### 5. Python Scripts
-- **create_word_doc.py:** Backend/Frontend Word dökümanı oluşturur
-- **create_mobile_word_doc.py:** Mobil Word dökümanı oluşturur
-
-#### 6. PowerShell Script
-- **compile-latex.ps1:** LaTeX dosyalarını PDF'e dönüştürür
-
-**11 Ana Bölüm (Backend & Frontend):**
-1. Proje Genel Bakış
-2. Teknoloji Stack (ASP.NET Core, React, TypeScript)
-3. Sistem Mimarisi
-4. Veritabanı Şeması
-5. Ana Özellikler (Ticket, SLA, Otomasyon)
-6. Güvenlik ve Yetkilendirme
-7. Kurulum ve Deployment
-8. API Dokümantasyonu
-9. Performans ve Ölçeklenebilirlik
-10. Test ve Kalite Güvencesi
-11. Sonuç ve Gelecek Planları
-
-### Mobil Uygulama Dokümanı
-
-**14 Ana Bölüm (Flutter iOS App):**
-1. Proje Genel Bakış
-2. Teknoloji Stack (Flutter, Dart, Packages)
-3. Uygulama Mimarisi
-4. Ekran Tasarımları ve Akışı
-5. State Management (Provider Pattern)
-6. API Entegrasyonu
-7. Data Models
-8. Gerçek Zamanlı İletişim (SignalR)
-9. Push Notifications
-10. Kurulum ve Çalıştırma
-11. Tema ve UI Customization
-12. Test Stratejisi
-13. Performans Optimizasyonu
-14. Sonuç ve Gelecek Planları
+<p align="center">
+  <strong>🚀 Kurumsal destek taleplerini yönetmek için tasarlanmış,<br/>gerçek zamanlı ve modern bir help desk çözümü.</strong>
+</p>
 
 ---
 
-## 🚀 Hızlı Kullanım
+[✨ Özellikler](#-özellikler) •
+[🛠️ Teknolojiler](#️-teknoloji-stack) •
+[🚀 Kurulum](#-hızlı-başlangıç) •
+[📱 Mobil](#-mobil-uygulama) •
+[📖 Dokümantasyon](#-dokümantasyon)
 
-### LaTeX'ten PDF Oluşturma
+</div>
 
-**Yöntem 1: Online (Overleaf)**
-1. [Overleaf](https://www.overleaf.com/) sitesine gidin
-2. "New Project" > "Upload Project" seçin
-3. `Tickly_Proje_Dokumani.tex` dosyasını yükleyin
-4. "Recompile" butonuna basın
-5. PDF otomatik oluşturulacaktır
+---
 
-**Yöntem 2: Lokal (TeX Live / MiKTeX)**
+## 🌟 Proje Hakkında
 
-Windows için:
-```powershell
-# MiKTeX kurulu ise
-pdflatex Tickly_Proje_Dokumani.tex
-pdflatex Tickly_Proje_Dokumani.tex  # İçindekiler için ikinci kez
+**Tickly**, kurumsal ortamlarda destek taleplerinin etkin bir şekilde yönetilmesi için geliştirilmiş kapsamlı bir help desk sistemidir. Modern web teknolojileri ve mobil platform desteği ile kullanıcılara kesintisiz bir deneyim sunar.
+
+<table>
+<tr>
+<td width="50%">
+
+### 🎯 Hedef Kitle
+- 👨‍💼 **IT Destek Ekipleri**
+- 🏢 **Kurumsal Müşteri Hizmetleri**
+- 👥 **Son Kullanıcılar**
+- 📊 **Yöneticiler ve Analistler**
+
+</td>
+<td width="50%">
+
+### 💡 Temel Değerler
+- ⚡ **Hız** - Gerçek zamanlı güncellemeler
+- 🔒 **Güvenlik** - JWT tabanlı kimlik doğrulama
+- 📈 **Ölçeklenebilirlik** - Modüler mimari
+- 🎨 **Kullanılabilirlik** - Modern UI/UX
+
+</td>
+</tr>
+</table>
+
+---
+
+## ✨ Özellikler
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+### 🎫 Ticket Yönetimi
+Talep oluşturma, atama,<br/>önceliklendirme ve takip
+
+</td>
+<td width="33%" align="center">
+
+### ⏱️ SLA Takibi
+Servis seviyesi anlaşmaları<br/>ve süre yönetimi
+
+</td>
+<td width="33%" align="center">
+
+### 🤖 Otomasyon
+Kural tabanlı otomatik<br/>atama ve bildirimler
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+### 🔔 Gerçek Zamanlı
+SignalR ile anlık<br/>bildirimler ve güncellemeler
+
+</td>
+<td width="33%" align="center">
+
+### 📧 Email Entegrasyonu
+Email'den ticket oluşturma<br/>ve bildirim gönderimi
+
+</td>
+<td width="33%" align="center">
+
+### 📚 Bilgi Bankası
+Makaleler ve SSS<br/>yönetimi
+
+</td>
+</tr>
+<tr>
+<td width="33%" align="center">
+
+### 👥 Rol Yönetimi
+Admin, Agent, EndUser<br/>RBAC yapısı
+
+</td>
+<td width="33%" align="center">
+
+### 🏢 Departmanlar
+Organizasyonel yapı<br/>ve hiyerarşi
+
+</td>
+<td width="33%" align="center">
+
+### 📊 Raporlama
+Dashboard ve<br/>analitik araçları
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🛠️ Teknoloji Stack
+
+<table>
+<tr>
+<th width="33%">🔧 Backend</th>
+<th width="33%">🎨 Frontend</th>
+<th width="33%">📱 Mobile</th>
+</tr>
+<tr>
+<td valign="top">
+
+```
+ASP.NET Core 8.0
+C# 12
+Entity Framework Core
+SQLite / PostgreSQL
+SignalR
+JWT Authentication
+Swagger/OpenAPI
 ```
 
-Linux için:
-```bash
-# TeX Live kurulu ise
-pdflatex Tickly_Proje_Dokumani.tex
-pdflatex Tickly_Proje_Dokumani.tex  # İçindekiler için ikinci kez
+</td>
+<td valign="top">
+
+```
+React 18
+TypeScript 5
+Vite
+TailwindCSS
+React Router
+Axios
+React Query
 ```
 
-**Yöntem 3: Docker ile**
-```bash
-docker run --rm -v ${PWD}:/workspace texlive/texlive pdflatex Tickly_Proje_Dokumani.tex
+</td>
+<td valign="top">
+
+```
+Flutter 3.x
+Dart
+Provider (State)
+HTTP Package
+SignalR Client
+Shared Preferences
 ```
 
-### 2. Word Dökümanı (.docx)
-- **Dosya:** `Tickly_Proje_Dokumani.docx`
-- **Format:** Microsoft Word 2016+
-- **Kullanım:** Düzenlenebilir Word formatında döküman
+</td>
+</tr>
+</table>
 
-#### Word Dökümanını Açma
-- Microsoft Word ile doğrudan açın
-- Google Docs'a yükleyin (Dosya > Aç > Yükle)
-- LibreOffice Writer ile açın
-- Online: [Office 365](https://www.office.com/) üzerinden açın
-
-### 3. Python Script
-- **Dosya:** `create_word_doc.py`
-- **Amaç:** Word dökümanını programatik olarak oluşturur
-- **Kullanım:**
-  ```bash
-  pip install python-docx
-  python create_word_doc.py
-  ```
-
-## 📋 Doküman İçeriği
-
-Her iki format da aşağıdaki bölümleri içerir:
-
-1. **Proje Genel Bakış**
-   - Proje tanımı
-   - Proje kapsamı
-   - Hedef kullanıcılar
-
-2. **Teknoloji Stack**
-   - Backend teknolojileri (ASP.NET Core, C#, EF Core)
-   - Frontend teknolojileri (React, TypeScript, Vite)
-   - DevOps araçları (Docker, Git)
-
-3. **Sistem Mimarisi**
-   - Katmanlı mimari diyagramı
-   - Her katmanın detaylı açıklaması
-
-4. **Veritabanı Şeması**
-   - Ana tablolar
-   - İlişkiler (ERD)
-   - Detaylı tablo şemaları
-
-5. **Ana Özellikler**
-   - Ticket yönetimi
-   - SLA (Service Level Agreement)
-   - Otomasyon kuralları
-   - Email entegrasyonu
-   - Bilgi bankası
-   - Gerçek zamanlı bildirimler
-
-6. **Güvenlik ve Yetkilendirme**
-   - JWT authentication
-   - RBAC (Role-Based Access Control)
-   - Güvenlik önlemleri
-
-7. **Kurulum ve Deployment**
-   - Geliştirme ortamı kurulumu
-   - Docker ile deployment
-   - Production deployment
-
-8. **API Dokümantasyonu**
-   - RESTful endpoints
-   - SignalR hubs
-   - Swagger/OpenAPI
-
-9. **Performans ve Ölçeklenebilirlik**
-   - Performans metrikleri
-   - Scaling stratejileri
-
-10. **Test ve Kalite Güvencesi**
-    - Test stratejisi
-    - Code quality tools
-
-11. **Sonuç ve Gelecek Planları**
-    - Proje sonuçları
-    - Gelecek geliştirmeler
-
-## 🎨 Doküman Özellikleri
-
-### LaTeX Dökümanı
-- ✅ Profesyonel akademik görünüm
-- ✅ Otomatik içindekiler (Table of Contents)
-- ✅ Renkli başlıklar ve vurgular
-- ✅ TikZ diyagramları
-- ✅ Syntax-highlighted kod blokları
-- ✅ Tablo ve liste formatları
-- ✅ Hyperlink desteği
-- ✅ Header/Footer ile sayfa numaraları
-
-### Word Dökümanı
-- ✅ Profesyonel ofis görünümü
-- ✅ Renkli kapak sayfası
-- ✅ Otomatik içindekiler
-- ✅ Tablo stilleri (Light Grid Accent 1)
-- ✅ Başlık hiyerarşisi (Heading 1-4)
-- ✅ Liste formatları (bullet, numbered)
-- ✅ Düzenlenebilir format
-- ✅ Microsoft Office uyumlu
-
-## 🔧 Gereksinimler
-
-### LaTeX için
-- **Online:** Sadece internet tarayıcısı (Overleaf)
-- **Lokal:**
-  - Windows: MiKTeX veya TeX Live
-  - macOS: MacTeX
-  - Linux: TeX Live
-  
-### Word için
-- Microsoft Word 2016 veya üzeri
-- LibreOffice Writer 6.0+
-- Google Docs (online)
-- Office 365 (online)
-
-### Python Script için
-- Python 3.7+
-- `python-docx` kütüphanesi
-
-## 📊 Dosya Boyutları (Yaklaşık)
-
-- `Tickly_Proje_Dokumani.tex`: ~70 KB
-- `Tickly_Proje_Dokumani.docx`: ~150 KB
-- `Tickly_Proje_Dokumani.pdf` (LaTeX'ten): ~500 KB
-
-## 🌐 Ek Kaynaklar
-
-- **Overleaf (LaTeX Online):** https://www.overleaf.com/
-- **LaTeX Dokümantasyon:** https://www.latex-project.org/
-- **python-docx Docs:** https://python-docx.readthedocs.io/
-- **Tickly Projesi:** `../README.md`
-
-## 📝 Notlar
-
-1. **LaTeX PDF Çıktısı:** İlk derlemede bazı referanslar eksik olabilir. En iyi sonuç için **2 kez** derleyin.
-
-2. **Word Düzenleme:** Word dökümanı düzenlenebilir formatdadır. İstediğiniz gibi özelleştirebilirsiniz.
-
-3. **Versiyon Kontrolü:** Dokümanları güncellerken git ile versiyon kontrolü yapmanız önerilir.
-
-4. **Lisans:** Bu dokümanlar proje ile aynı lisans altındadır.
+---
 
 ## 🚀 Hızlı Başlangıç
 
+### 📋 Ön Gereksinimler
+
+| Araç | Versiyon |
+|------|----------|
+| .NET SDK | 8.0+ |
+| Node.js | 18+ |
+| Flutter | 3.x |
+| Git | Latest |
+
+### ⚡ Kurulum
+
 ```bash
-# 1. Word dökümanını oluştur (eğer yoksa)
-python create_word_doc.py
+# 1️⃣ Projeyi klonlayın
+git clone https://github.com/your-repo/tickly.git
+cd tickly
 
-# 2. LaTeX'i PDF'e çevir (MiKTeX/TeX Live kurulu ise)
-pdflatex Tickly_Proje_Dokumani.tex
-pdflatex Tickly_Proje_Dokumani.tex
+# 2️⃣ Backend'i başlatın
+cd backend
+dotnet restore
+dotnet run
 
-# 3. Veya Overleaf'te aç (önerilir)
-# https://www.overleaf.com/ > Upload Project
+# 3️⃣ Frontend'i başlatın (yeni terminal)
+cd frontend
+npm install
+npm run dev
+
+# 4️⃣ Mobil uygulamayı çalıştırın (opsiyonel)
+cd mobile
+flutter pub get
+flutter run
 ```
 
-## 📧 İletişim
+### 🌐 Erişim Adresleri
 
-Sorularınız için projenin ana README.md dosyasına bakın.
+| Servis | URL |
+|--------|-----|
+| 🖥️ Frontend | `http://localhost:5173` |
+| ⚙️ Backend API | `http://localhost:5000` |
+| 📚 Swagger UI | `http://localhost:5000/swagger` |
 
 ---
 
+## 📱 Mobil Uygulama
+
+<table>
+<tr>
+<td width="60%">
+
+Flutter ile geliştirilmiş cross-platform mobil uygulama:
+
+- ✅ iOS ve Android desteği
+- ✅ Gerçek zamanlı bildirimler
+- ✅ Offline mod desteği
+- ✅ Karanlık/Aydınlık tema
+- ✅ Biyometrik kimlik doğrulama
+- ✅ Push notifications
+
+📖 Detaylı kurulum için: [`mobile/SETUP.md`](mobile/SETUP.md)
+
+</td>
+<td width="40%" align="center">
+
+```
+📂 mobile/
+├── 📁 lib/
+│   ├── 📁 models/
+│   ├── 📁 providers/
+│   ├── 📁 screens/
+│   ├── 📁 services/
+│   └── 📁 widgets/
+├── 📁 test/
+└── 📄 pubspec.yaml
+```
+
+</td>
+</tr>
+</table>
+
+---
+
+## 📁 Proje Yapısı
+
+```
+tickly/
+├── 📂 backend/                 # ASP.NET Core API
+│   ├── 📁 src/
+│   │   ├── Controllers/        # API Controllers
+│   │   ├── Models/             # Entity Models
+│   │   ├── Services/           # Business Logic
+│   │   ├── Data/               # DbContext & Repos
+│   │   └── Hubs/               # SignalR Hubs
+│   └── 📁 Migrations/          # EF Migrations
+│
+├── 📂 frontend/                # React SPA
+│   ├── 📁 src/
+│   │   ├── components/         # UI Components
+│   │   ├── pages/              # Route Pages
+│   │   ├── context/            # React Context
+│   │   └── lib/                # Utilities
+│   └── 📄 vite.config.ts
+│
+├── 📂 mobile/                  # Flutter App
+│   └── 📁 lib/                 # Dart Source
+│
+└── 📂 docs/                    # Documentation
+    ├── 📄 *.tex                # LaTeX Docs
+    └── 📄 *.md                 # Markdown Docs
+```
+
+---
+
+## 📖 Dokümantasyon
+
+<table>
+<tr>
+<td width="50%">
+
+### 📄 Proje Dökümanları
+
+| Dosya | Açıklama |
+|-------|----------|
+| [`Tickly_Proje_Dokumani.tex`](docs/Tickly_Proje_Dokumani.tex) | Ana LaTeX dökümanı |
+| [`Tickly_Mobile_Dokumani.tex`](docs/Tickly_Mobile_Dokumani.tex) | Mobil uygulama dökümanı |
+| [`Video_Senaryo.md`](docs/Video_Senaryo.md) | Demo video senaryosu |
+
+</td>
+<td width="50%">
+
+### 🔗 Faydalı Linkler
+
+- 📚 [ASP.NET Core Docs](https://docs.microsoft.com/aspnet/core)
+- ⚛️ [React Documentation](https://react.dev)
+- 🦋 [Flutter Docs](https://docs.flutter.dev)
+- 📡 [SignalR Guide](https://docs.microsoft.com/aspnet/signalr)
+
+</td>
+</tr>
+</table>
+
+### 📝 LaTeX'ten PDF Oluşturma
+
+<details>
+<summary><b>🔽 Overleaf ile (Önerilen)</b></summary>
+
+1. [Overleaf.com](https://www.overleaf.com/) adresine gidin
+2. **New Project** → **Upload Project**
+3. `.tex` dosyasını yükleyin
+4. **Recompile** butonuna basın
+
+</details>
+
+<details>
+<summary><b>🔽 Lokal Ortamda</b></summary>
+
+```powershell
+# Windows (MiKTeX)
+cd docs
+pdflatex Tickly_Proje_Dokumani.tex
+pdflatex Tickly_Proje_Dokumani.tex  # İçindekiler için 2. kez
+```
+
+```bash
+# Linux (TeX Live)
+cd docs
+pdflatex Tickly_Proje_Dokumani.tex
+pdflatex Tickly_Proje_Dokumani.tex
+```
+
+</details>
+
+---
+
+## 🔐 Güvenlik
+
+| Özellik | Açıklama |
+|---------|----------|
+| 🔑 **JWT Authentication** | Token tabanlı kimlik doğrulama |
+| 👥 **RBAC** | Rol tabanlı erişim kontrolü |
+| 🔒 **Password Hashing** | BCrypt ile şifreleme |
+| 🛡️ **CORS** | Cross-Origin güvenliği |
+| 📝 **Input Validation** | Model validation |
+
+---
+
+## 🗺️ Yol Haritası
+
+- [x] ✅ Temel ticket yönetimi
+- [x] ✅ Kullanıcı kimlik doğrulama
+- [x] ✅ Gerçek zamanlı bildirimler
+- [x] ✅ Mobil uygulama (Flutter)
+- [ ] 🔄 AI destekli ticket sınıflandırma
+- [ ] 🔄 Gelişmiş raporlama ve analitik
+- [ ] 🔄 Çoklu dil desteği (i18n)
+- [ ] 🔄 Entegrasyon API'leri (Slack, Teams)
+
+
+---
+
+<div align="center">
+
+### ⭐ Beğendiyseniz yıldız vermeyi unutmayın!
+
+<br/>
+
+**Tickly** ile destek taleplerinizi<br/>
+profesyonelce yönetin 🎫✨
+
+<br/>
+
 *Son güncelleme: Ocak 2026*
+
+---
+
+Made with ❤️ by **Tickly Team**
+
+</div>
