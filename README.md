@@ -325,7 +325,6 @@ tickly/
 | Dosya | Açıklama |
 |-------|----------|
 | [`Tickly_Proje_Dokumani.pdf`](Tickly_Proje_Dokumani.pdf) | Proje dokümantasyonu (PDF) |
-| [`Video_Senaryo.md`](docs/Video_Senaryo.md) | Demo video senaryosu |
 
 </td>
 <td width="50%">
