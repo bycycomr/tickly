@@ -17,3 +17,16 @@ obj/
 # Logs
 logs/
 *.log
+
+# Large files and executables
+*.exe
+*.msi
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Archive temporary files
+archive/*.exe
+archive/*.docx
+archive/~$*
