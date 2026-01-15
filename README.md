@@ -324,7 +324,8 @@ tickly/
 
 | Dosya | Açıklama |
 |-------|----------|
-| [`Tickly_Proje_Dokumani.pdf`](Tickly_Proje_Dokumani.pdf) | Proje dokümantasyonu (PDF) |
+| [`Tickly_Proje_Dokumani.pdf`](Tickly_Proje_Dokumani.pdf) | Web uygulaması dokümantasyonu (PDF) |
+| [`Tickly_Mobile_Dokumani.pdf`](Tickly_Mobile_Dokumani.pdf) | Mobil uygulama dokümantasyonu (PDF) |
 
 </td>
 <td width="50%">
