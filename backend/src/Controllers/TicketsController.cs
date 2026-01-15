@@ -85,18 +85,40 @@ namespace Tickly.Api.Controllers
             else
             {
                 var deptRoles = GetDeptRoles();
-                var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
+                
+                // Separate roles by type
+                var managerOrLeadDepts = deptRoles
+                    .Where(d => d.Role == RoleName.DepartmentManager || d.Role == RoleName.TeamLead)
+                    .Select(d => d.DeptId)
+                    .Distinct()
+                    .ToList();
+                    
+                var staffDepts = deptRoles
+                    .Where(d => d.Role == RoleName.DepartmentStaff)
+                    .Select(d => d.DeptId)
+                    .Distinct()
+                    .ToList();
 
                 query = _db.Tickets.AsQueryable();
-                if (allowedDeptIds.Any())
+                
+                // DepartmentManager and TeamLead: See ALL tickets in their department(s)
+                // DepartmentStaff: See ONLY tickets assigned to them in their department(s)
+                // EndUser: See tickets they created or assigned to them
+                
+                if (managerOrLeadDepts.Any() || staffDepts.Any())
                 {
-                    query = query.Where(t => (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value))
-                                             || t.AssignedToUserId == userId
-                                             || t.CreatorId == userId);
+                    query = query.Where(t => 
+                        // Manager/TeamLead: All tickets in their departments
+                        (t.DepartmentId != null && managerOrLeadDepts.Contains(t.DepartmentId.Value))
+                        // Staff: Only assigned tickets in their departments
+                        || (t.DepartmentId != null && staffDepts.Contains(t.DepartmentId.Value) && t.AssignedToUserId == userId)
+                        // Own tickets
+                        || t.CreatorId == userId
+                    );
                 }
                 else
                 {
-                    // no department roles – only tickets assigned to the current user or created by them
+                    // EndUser only: tickets they created or assigned to them
                     query = query.Where(t => t.AssignedToUserId == userId || t.CreatorId == userId);
                 }
             }
@@ -128,10 +150,17 @@ namespace Tickly.Api.Controllers
 
             var list = await query.OrderByDescending(t => t.CreatedAt).ToListAsync();
             
-            // Enrich with user names
-            var userIds = list.Select(t => t.CreatorId).Concat(list.Select(t => t.AssignedToUserId))
-                .Where(id => id != null).Distinct().ToList();
-            var users = await _db.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id);
+            // Enrich with user names - OPTIMIZED: Single query for all users
+            var userIds = list.Select(t => t.CreatorId)
+                .Concat(list.Select(t => t.AssignedToUserId))
+                .Where(id => id != null)
+                .Distinct()
+                .ToList();
+            
+            var users = await _db.Users
+                .Where(u => userIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.DisplayName, u.Username })
+                .ToDictionaryAsync(u => u.Id);
             
             var enrichedList = list.Select(t => new
             {
@@ -175,13 +204,25 @@ namespace Tickly.Api.Controllers
             if (userId == null) return Unauthorized();
             
             var deptRoles = GetDeptRoles();
-            var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
+            
+            // Check if user is Manager or TeamLead in ticket's department
+            var isManagerOrLead = deptRoles.Any(dr => 
+                dr.DeptId == (t.DepartmentId ?? -1) && 
+                (dr.Role == RoleName.DepartmentManager || dr.Role == RoleName.TeamLead)
+            );
+            
+            // Check if user is Staff in ticket's department (must be assigned)
+            var isAssignedStaff = deptRoles.Any(dr => 
+                dr.DeptId == (t.DepartmentId ?? -1) && 
+                dr.Role == RoleName.DepartmentStaff
+            ) && t.AssignedToUserId == userId;
 
             // Authorization check
             bool authorized = IsSuperAdmin() || 
                              t.AssignedToUserId == userId || 
                              t.CreatorId == userId ||
-                             (t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value));
+                             isManagerOrLead ||
+                             isAssignedStaff;
             
             if (!authorized) return Forbid();
             
@@ -284,14 +325,17 @@ namespace Tickly.Api.Controllers
             if (!IsSuperAdmin())
             {
                 var deptRoles = GetDeptRoles();
-                var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
-
-                // Sadece departman üyeleri (Manager/Staff) veya atanan kişi güncelleyebilir
-                // Ticket oluşturan kişi (Creator) güncelleyemez
-                var hasDeptAccess = t.DepartmentId != null && allowedDeptIds.Contains(t.DepartmentId.Value);
+                
+                // Sadece departman yöneticileri (Manager/TeamLead) güncelleme yapabilir
+                // veya kendi atanmış ticketlarını güncelleyebilir
+                var isManagerOrLead = deptRoles.Any(dr => 
+                    dr.DeptId == (t.DepartmentId ?? -1) && 
+                    (dr.Role == RoleName.DepartmentManager || dr.Role == RoleName.TeamLead)
+                );
+                
                 var isAssigned = t.AssignedToUserId == userId;
                 
-                if (!hasDeptAccess && !isAssigned)
+                if (!isManagerOrLead && !isAssigned)
                     return Forbid();
             }
 
@@ -353,12 +397,15 @@ namespace Tickly.Api.Controllers
             if (t == null) return NotFound();
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
-            // only SuperAdmin or DepartmentManager for the ticket's department can delete
+            // only SuperAdmin or DepartmentManager/TeamLead for the ticket's department can delete
             if (!IsSuperAdmin())
             {
                 var deptRoles = GetDeptRoles();
-                var isDeptManager = deptRoles.Any(dr => dr.DeptId == (t.DepartmentId ?? -1) && dr.Role == RoleName.DepartmentManager);
-                if (!isDeptManager) return Forbid();
+                var isManagerOrLead = deptRoles.Any(dr => 
+                    dr.DeptId == (t.DepartmentId ?? -1) && 
+                    (dr.Role == RoleName.DepartmentManager || dr.Role == RoleName.TeamLead)
+                );
+                if (!isManagerOrLead) return Forbid();
             }
 
             _db.Tickets.Remove(t);
@@ -371,6 +418,26 @@ namespace Tickly.Api.Controllers
         {
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
+
+            // Ticket'ı kontrol et
+            var ticket = await _db.Tickets.FindAsync(id);
+            if (ticket == null) return NotFound();
+
+            // Yetki kontrolü: Sadece atanan kişi veya departman yöneticisi/teamlead status değiştirebilir
+            if (!IsSuperAdmin())
+            {
+                var deptRoles = GetDeptRoles();
+                
+                var isManagerOrLead = deptRoles.Any(dr => 
+                    dr.DeptId == (ticket.DepartmentId ?? -1) && 
+                    (dr.Role == RoleName.DepartmentManager || dr.Role == RoleName.TeamLead)
+                );
+                
+                var isAssigned = ticket.AssignedToUserId == userId;
+                
+                if (!isManagerOrLead && !isAssigned)
+                    return Forbid();
+            }
 
             try
             {
@@ -478,10 +545,21 @@ namespace Tickly.Api.Controllers
             if (!IsSuperAdmin())
             {
                 var deptRoles = GetDeptRoles();
-                var allowedDeptIds = deptRoles.Select(d => d.DeptId).Distinct().ToList();
+                
+                var isManagerOrLead = deptRoles.Any(dr => 
+                    dr.DeptId == (ticket.DepartmentId ?? -1) && 
+                    (dr.Role == RoleName.DepartmentManager || dr.Role == RoleName.TeamLead)
+                );
+                
+                var isAssignedStaff = deptRoles.Any(dr => 
+                    dr.DeptId == (ticket.DepartmentId ?? -1) && 
+                    dr.Role == RoleName.DepartmentStaff
+                ) && ticket.AssignedToUserId == userId;
+                
                 if (ticket.AssignedToUserId != userId && 
                     ticket.CreatorId != userId &&
-                    (ticket.DepartmentId == null || !allowedDeptIds.Contains(ticket.DepartmentId.Value)))
+                    !isManagerOrLead &&
+                    !isAssignedStaff)
                 {
                     return Forbid();
                 }
@@ -492,14 +570,42 @@ namespace Tickly.Api.Controllers
                 .OrderBy(e => e.CreatedAt)
                 .ToListAsync();
 
+            // Enrich events with actor display names
+            var actorIds = events.Where(e => !string.IsNullOrEmpty(e.ActorId)).Select(e => e.ActorId).Distinct().ToList();
+            var users = await _db.Users
+                .Where(u => actorIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.DisplayName, u.Username })
+                .ToListAsync();
+            
+            var userDict = users.ToDictionary(u => u.Id, u => u.DisplayName ?? u.Username);
+
             // Filter internal comments for non-agents
-            var isDeptAgent = GetDeptRoles().Any(r => ticket.DepartmentId != null && r.DeptId == ticket.DepartmentId.Value);
+            var isDeptAgent = GetDeptRoles().Any(r => 
+                ticket.DepartmentId != null && 
+                r.DeptId == ticket.DepartmentId.Value &&
+                (r.Role == RoleName.DepartmentManager || r.Role == RoleName.TeamLead || r.Role == RoleName.DepartmentStaff)
+            );
             if (!IsSuperAdmin() && !isDeptAgent)
             {
                 events = events.Where(e => e.Visibility == EventVisibility.Public).ToList();
             }
 
-            return Ok(events);
+            // Map to DTO with display names
+            var eventDtos = events.Select(e => new
+            {
+                e.Id,
+                e.TicketId,
+                e.Type,
+                e.ActorId,
+                ActorDisplayName = !string.IsNullOrEmpty(e.ActorId) && userDict.ContainsKey(e.ActorId) 
+                    ? userDict[e.ActorId] 
+                    : "Sistem",
+                e.Visibility,
+                e.PayloadJson,
+                e.CreatedAt
+            }).ToList();
+
+            return Ok(eventDtos);
         }
 
         // Helper: Get default SLA plan based on priority

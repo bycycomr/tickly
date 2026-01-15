@@ -521,8 +521,8 @@ export default function Admin() {
       const rules = await api.getAutomationRules();
       setAutomationRules(rules);
     } catch (err) {
-      console.error('Automation rules yüklenemedi', err);
-      toast.error('Automation rules yüklenemedi');
+      console.error('Otomasyon kuralları yüklenemedi', err);
+      toast.error('Otomasyon kuralları yüklenemedi');
     } finally {
       setLoadingAutomation(false);
     }
@@ -561,7 +561,7 @@ export default function Admin() {
       setNewRulePriority('100');
       setNewRuleCondition('{}');
       setNewRuleAction('{}');
-      toast.success('Automation rule başarıyla oluşturuldu');
+      toast.success('Otomasyon kuralı başarıyla oluşturuldu');
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || err.message || 'Rule oluşturulamadı';
       setError(errorMsg);
@@ -583,12 +583,12 @@ export default function Admin() {
   }
 
   async function deleteAutomationRule(id: number) {
-    if (!confirm('Bu automation rule\'u silmek istediğinizden emin misiniz?')) return;
+    if (!confirm('Bu otomasyon kuralını silmek istediğinizden emin misiniz?')) return;
     
     try {
       await api.deleteAutomationRule(id);
       setAutomationRules((prev) => prev.filter((r) => r.id !== id));
-      toast.success('Rule silindi');
+      toast.success('Kural silindi');
     } catch (err: any) {
       const errorMsg = err?.response?.data?.error || 'Rule silinemedi';
       toast.error(errorMsg);
@@ -718,8 +718,8 @@ export default function Admin() {
               onClick={() => setActiveTab('departments')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'departments'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <Building2 className="w-4 h-4 mr-2" />
@@ -729,8 +729,8 @@ export default function Admin() {
               onClick={() => setActiveTab('users')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'users'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <UserPlus className="w-4 h-4 mr-2" />
@@ -740,8 +740,8 @@ export default function Admin() {
               onClick={() => setActiveTab('sla')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'sla'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <Clock className="w-4 h-4 mr-2" />
@@ -751,8 +751,8 @@ export default function Admin() {
               onClick={() => setActiveTab('categories')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'categories'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <FolderTree className="w-4 h-4 mr-2" />
@@ -762,19 +762,19 @@ export default function Admin() {
               onClick={() => setActiveTab('automation')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'automation'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <Zap className="w-4 h-4 mr-2" />
-              Automation
+              Otomasyon
             </button>
             <button
               onClick={() => setActiveTab('kb')}
               className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                 activeTab === 'kb'
-                  ? 'bg-primary-600 text-white shadow-md'
-                  : 'text-gray-700 bg-gray-100 hover:bg-gray-200'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-purple-50'
               }`}
             >
               <BookOpen className="w-4 h-4 mr-2" />
@@ -797,12 +797,12 @@ export default function Admin() {
       {activeTab === 'departments' && (
         <>
           <div className="card">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Yeni Departman Olustur</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Yeni Departman Oluştur</h2>
           <form onSubmit={createDept} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="deptName" className="label">
-                  Departman Adi <span className="text-red-500">*</span>
+                  Departman Adı <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="deptName"
@@ -810,13 +810,13 @@ export default function Admin() {
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
                   className="input"
-                  placeholder="Orn: Bilgi Islem"
+                  placeholder="Ör: Bilgi İşlem"
                   required
                 />
               </div>
               <div>
                 <label htmlFor="deptDesc" className="label">
-                  Aciklama
+                  Açıklama
                 </label>
                 <input
                   id="deptDesc"
@@ -824,7 +824,7 @@ export default function Admin() {
                   value={newDesc}
                   onChange={(e) => setNewDesc(e.target.value)}
                   className="input"
-                  placeholder="Departman aciklamasi"
+                  placeholder="Departman açıklaması"
                 />
               </div>
             </div>
@@ -855,7 +855,7 @@ export default function Admin() {
             </div>
           ) : departments.length === 0 ? (
             <div className="card text-center py-12 text-gray-500">
-              Henuz departman bulunmuyor
+              Henüz departman bulunmuyor
             </div>
           ) : (
             departments.map((dept) => (
@@ -883,7 +883,7 @@ export default function Admin() {
                       className="btn btn-secondary"
                     >
                       <Users size={18} className="mr-2" />
-                      {selectedDept === dept.id ? 'Uyeleri Gizle' : 'Uyeleri Goster'}
+                      {selectedDept === dept.id ? 'Üyeleri Gizle' : 'Üyeleri Göster'}
                     </button>
                     <button
                       onClick={() => deleteDept(dept.id)}
@@ -897,17 +897,17 @@ export default function Admin() {
 
                 {selectedDept === dept.id && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
-                    <h4 className="text-md font-semibold text-gray-900 mb-4">Departman Uyeleri</h4>
+                    <h4 className="text-md font-semibold text-gray-900 mb-4">Departman Üyeleri</h4>
                     
                     {members.length === 0 ? (
-                      <p className="text-sm text-gray-500 mb-4">Henuz uye bulunmuyor</p>
+                      <p className="text-sm text-gray-500 mb-4">Henüz üye bulunmuyor</p>
                     ) : (
                       <div className="overflow-x-auto mb-6">
                         <table className="table">
                           <thead>
                             <tr>
-                              <th>Kullanici ID</th>
-                              <th>Kullanici Adi</th>
+                              <th>Kullanıcı ID</th>
+                              <th>Kullanıcı Adı</th>
                               <th>Ad Soyad</th>
                               <th>Rol</th>
                               <th>İşlemler</th>
@@ -922,10 +922,10 @@ export default function Admin() {
                                 <td>
                                   <span className="badge badge-info">
                                     {member.role === 0
-                                      ? 'Manager'
+                                      ? 'Yönetici'
                                       : member.role === 1
-                                      ? 'Staff'
-                                      : 'End User'}
+                                      ? 'Çalışan'
+                                      : 'Son Kullanıcı'}
                                   </span>
                                 </td>
                                 <td>
@@ -946,7 +946,7 @@ export default function Admin() {
                     )}
 
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <h5 className="text-sm font-semibold text-gray-900 mb-3">Kullanici Ata</h5>
+                      <h5 className="text-sm font-semibold text-gray-900 mb-3">Kullanıcı Ata</h5>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                           <label htmlFor={`userId-${dept.id}`} className="label">
@@ -976,9 +976,9 @@ export default function Admin() {
                             onChange={(e) => setAssignRole(e.target.value)}
                             className="select"
                           >
-                            <option value="DepartmentManager">Departman Yoneticisi</option>
-                            <option value="DepartmentStaff">Departman Calisani</option>
-                            <option value="EndUser">Son Kullanici</option>
+                            <option value="DepartmentManager">Departman Yöneticisi</option>
+                            <option value="DepartmentStaff">Departman Çalışanı</option>
+                            <option value="EndUser">Son Kullanıcı</option>
                           </select>
                         </div>
                         <div className="flex items-end">
@@ -1220,7 +1220,7 @@ export default function Admin() {
                 </div>
               </div>
               <div className="flex justify-start">
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn btn-primary">
                   <Plus className="w-4 h-4 mr-2" />
                   Kategori Oluştur
                 </button>
@@ -1267,7 +1267,7 @@ export default function Admin() {
           <div className="card">
             <h2 className="text-xl font-semibold mb-4 flex items-center">
               <Zap className="w-6 h-6 mr-2 text-primary-600" />
-              Yeni Automation Rule Oluştur
+              Yeni Otomasyon Kuralı Oluştur
             </h2>
             <form onSubmit={createAutomationRule} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1298,7 +1298,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Trigger *
+                    Tetikleyici *
                   </label>
                   <select
                     value={newRuleTrigger}
@@ -1306,19 +1306,19 @@ export default function Admin() {
                     className="input"
                     required
                   >
-                    <option value={0}>Ticket Created</option>
-                    <option value={1}>Ticket Updated</option>
-                    <option value={2}>Status Changed</option>
-                    <option value={3}>Comment Added</option>
-                    <option value={4}>SLA Warning</option>
-                    <option value={5}>Schedule (Cron)</option>
-                    <option value={6}>Inbound Email</option>
-                    <option value={7}>Custom Webhook</option>
+                    <option value={0}>Ticket Oluşturuldu</option>
+                    <option value={1}>Ticket Güncellendi</option>
+                    <option value={2}>Durum Değişti</option>
+                    <option value={3}>Yorum Eklendi</option>
+                    <option value={4}>SLA Uyarısı</option>
+                    <option value={5}>Zamanlanmış (Cron)</option>
+                    <option value={6}>Gelen Email</option>
+                    <option value={7}>Özel Webhook</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
+                    Öncelik
                   </label>
                   <input
                     type="number"
@@ -1335,7 +1335,7 @@ export default function Admin() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Condition (JSON)
+                    Koşul (JSON)
                   </label>
                   <textarea
                     value={newRuleCondition}
@@ -1350,7 +1350,7 @@ export default function Admin() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Action (JSON)
+                    Aksiyon (JSON)
                   </label>
                   <textarea
                     value={newRuleAction}
@@ -1374,12 +1374,12 @@ export default function Admin() {
                   className="h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                 />
                 <label htmlFor="ruleEnabled" className="ml-2 text-sm text-gray-700">
-                  Rule aktif (oluşturulduğunda hemen çalışsın)
+                  Kural aktif (oluşturulduğunda hemen çalışsın)
                 </label>
               </div>
 
               <div className="flex justify-start">
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn btn-primary">
                   <Plus className="w-4 h-4 mr-2" />
                   Automation Rule Oluştur
                 </button>
@@ -1388,27 +1388,27 @@ export default function Admin() {
           </div>
 
           <div className="card">
-            <h2 className="text-xl font-semibold mb-4">Automation Rules</h2>
+            <h2 className="text-xl font-semibold mb-4">Otomasyon Kuralları</h2>
             {loadingAutomation ? (
               <div className="text-center py-8">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                 <p className="mt-2 text-gray-600">Yükleniyor...</p>
               </div>
             ) : automationRules.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Henüz automation rule bulunmuyor.</p>
+              <p className="text-gray-500 text-center py-8">Henüz otomasyon kuralı bulunmuyor.</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Rule Adı
+                        Kural Adı
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Trigger
+                        Tetikleyici
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Priority
+                        Öncelik
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Son Çalıştırma
@@ -1424,14 +1424,14 @@ export default function Admin() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {automationRules.map((rule) => {
                       const triggerNames = [
-                        'Ticket Created',
-                        'Ticket Updated',
-                        'Status Changed',
-                        'Comment Added',
-                        'SLA Warning',
-                        'Schedule (Cron)',
-                        'Inbound Email',
-                        'Custom Webhook',
+                        'Ticket Oluşturuldu',
+                        'Ticket Güncellendi',
+                        'Durum Değişti',
+                        'Yorum Eklendi',
+                        'SLA Uyarısı',
+                        'Zamanlanmış (Cron)',
+                        'Gelen Email',
+                        'Özel Webhook',
                       ];
                       return (
                         <tr key={rule.id} className="hover:bg-gray-50">
@@ -1443,7 +1443,7 @@ export default function Admin() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {triggerNames[rule.trigger] || `Unknown (${rule.trigger})`}
+                              {triggerNames[rule.trigger] || `Bilinmeyen (${rule.trigger})`}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -1488,12 +1488,12 @@ export default function Admin() {
             <div className="flex items-start">
               <AlertCircle className="w-5 h-5 text-gray-600 mr-3 mt-0.5 flex-shrink-0" />
               <div className="text-sm text-gray-700">
-                <p className="font-semibold mb-2 text-gray-900">Automation Rules Nasıl Çalışır?</p>
+                <p className="font-semibold mb-2 text-gray-900">Otomasyon Kuralları Nasıl Çalışır?</p>
                 <ul className="list-disc list-inside space-y-1">
-                  <li><strong>Trigger:</strong> Rule'un ne zaman çalışacağını belirler (örn: yeni ticket, durum değişimi)</li>
-                  <li><strong>Condition:</strong> Rule'un çalışması için gerekli koşullar (JSON formatında)</li>
-                  <li><strong>Action:</strong> Koşul sağlandığında yapılacak işlemler (JSON formatında)</li>
-                  <li><strong>Priority:</strong> Birden fazla rule tetiklendiğinde öncelik sırası (düşük sayı = yüksek öncelik)</li>
+                  <li><strong>Tetikleyici:</strong> Kuralın ne zaman çalışacağını belirler (örn: yeni ticket, durum değişimi)</li>
+                  <li><strong>Koşul:</strong> Kuralın çalışması için gerekli koşullar (JSON formatında)</li>
+                  <li><strong>Aksiyon:</strong> Koşul sağlandığında yapılacak işlemler (JSON formatında)</li>
+                  <li><strong>Öncelik:</strong> Birden fazla kural tetiklendiğinde öncelik sırası (düşük sayı = yüksek öncelik)</li>
                 </ul>
                 <p className="mt-3 text-xs">
                   <strong>Örnek Kullanım:</strong> Yüksek öncelikli ticket oluşturulduğunda otomatik olarak manager'a atama yapabilir veya email bildirimi gönderebilirsiniz.
@@ -1632,7 +1632,7 @@ export default function Admin() {
                 </label>
               </div>
 
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn btn-primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Makale Oluştur
               </button>

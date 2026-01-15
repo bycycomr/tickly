@@ -94,22 +94,15 @@ builder.Services.AddAuthentication(options =>
 		IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtKey))
 	};
 	
-	// Debug: Log token validation failures + SignalR token support
+	// SignalR token support and optional logging
 	options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
 	{
 		OnAuthenticationFailed = context =>
 		{
-			Console.WriteLine($"JWT Auth Failed: {context.Exception.Message}");
-			return System.Threading.Tasks.Task.CompletedTask;
-		},
-		OnTokenValidated = context =>
-		{
-			Console.WriteLine($"JWT Token Validated for: {context.Principal?.Identity?.Name}");
-			return System.Threading.Tasks.Task.CompletedTask;
-		},
-		OnChallenge = context =>
-		{
-			Console.WriteLine($"JWT Challenge: {context.Error}, {context.ErrorDescription}");
+			if (builder.Environment.IsDevelopment())
+			{
+				Console.WriteLine($"JWT Auth Failed: {context.Exception.Message}");
+			}
 			return System.Threading.Tasks.Task.CompletedTask;
 		},
 		OnMessageReceived = context =>
@@ -149,6 +142,10 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+// Configure Kestrel to only use HTTP (disable HTTPS redirect warning)
+app.Urls.Clear();
+app.Urls.Add("http://localhost:5000");
 
 // Enable Swagger in all environments for API documentation
 app.UseSwagger();
@@ -202,12 +199,36 @@ using (var scope2 = app.Services.CreateScope())
 	var db = scope2.ServiceProvider.GetRequiredService<AppDbContext>();
 	try
 	{
+		// Seed default tenant if none exists
+		if (!db.Tenants.Any())
+		{
+			var tenant = new Tickly.Api.Models.Tenant 
+			{ 
+				Name = "Default Organization",
+				PrimaryDomain = "default.local",
+				IsActive = true,
+				CreatedAt = DateTime.UtcNow
+			};
+			db.Tenants.Add(tenant);
+			db.SaveChanges();
+			Console.WriteLine($"Seeded default tenant '{tenant.Name}' (id={tenant.Id})");
+		}
+
+		var defaultTenant = db.Tenants.First();
+
 		if (!db.Users.Any())
 		{
 			var adminName = configuration["InitialSuperAdmin:Username"] ?? "superadmin";
 			var adminEmail = configuration["InitialSuperAdmin:Email"] ?? "admin@example.com";
 			var adminPassword = configuration["InitialSuperAdmin:Password"] ?? "password";
-			var user = new Tickly.Api.Models.User { Username = adminName, Email = adminEmail, DisplayName = "Super Admin", PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword) };
+			var user = new Tickly.Api.Models.User 
+			{ 
+				Username = adminName, 
+				Email = adminEmail, 
+				DisplayName = "Super Admin", 
+				PasswordHash = BCrypt.Net.BCrypt.HashPassword(adminPassword),
+				TenantId = defaultTenant.Id
+			};
 			db.Users.Add(user);
 			db.RoleAssignments.Add(new Tickly.Api.Models.RoleAssignment { UserId = user.Id, DepartmentId = null, Role = Tickly.Api.Models.RoleName.SuperAdmin });
 			db.SaveChanges();
@@ -224,12 +245,13 @@ using (var scope2 = app.Services.CreateScope())
 		
 		foreach (var dept in standardDepartments)
 		{
-			if (!db.Departments.Any(d => d.Name == dept.Name))
+			if (!db.Departments.Any(d => d.Name == dept.Name && d.TenantId == defaultTenant.Id))
 			{
 				db.Departments.Add(new Tickly.Api.Models.Department 
 				{ 
 					Name = dept.Name, 
-					Description = dept.Description 
+					Description = dept.Description,
+					TenantId = defaultTenant.Id
 				});
 			}
 		}

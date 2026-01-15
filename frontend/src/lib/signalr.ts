@@ -16,15 +16,38 @@ class SignalRService {
       .withUrl('http://localhost:5000/hubs/ticket', {
         accessTokenFactory: () => token,
       })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Information)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (retryContext) => {
+          // Exponential backoff: 0s, 2s, 10s, 30s, then 60s
+          if (retryContext.previousRetryCount === 0) return 0;
+          if (retryContext.previousRetryCount === 1) return 2000;
+          if (retryContext.previousRetryCount === 2) return 10000;
+          if (retryContext.previousRetryCount === 3) return 30000;
+          return 60000; // Max 60 seconds
+        }
+      })
+      .configureLogging(import.meta.env.DEV ? signalR.LogLevel.Information : signalR.LogLevel.Warning)
       .build();
+
+    // Reconnection handlers
+    this.ticketConnection.onreconnecting((error) => {
+      if (import.meta.env.DEV) console.warn('TicketHub reconnecting...', error);
+    });
+
+    this.ticketConnection.onreconnected((connectionId) => {
+      if (import.meta.env.DEV) console.log('✅ TicketHub reconnected:', connectionId);
+    });
+
+    this.ticketConnection.onclose((error) => {
+      if (import.meta.env.DEV) console.error('❌ TicketHub connection closed:', error);
+    });
 
     try {
       await this.ticketConnection.start();
-      console.log('✅ TicketHub connected');
+      if (import.meta.env.DEV) console.log('✅ TicketHub connected');
     } catch (err) {
       console.error('❌ TicketHub connection failed:', err);
+      throw err;
     }
   }
 
@@ -34,15 +57,38 @@ class SignalRService {
       .withUrl('http://localhost:5000/hubs/notification', {
         accessTokenFactory: () => token,
       })
-      .withAutomaticReconnect()
-      .configureLogging(signalR.LogLevel.Information)
+      .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: (retryContext) => {
+          // Exponential backoff: 0s, 2s, 10s, 30s, then 60s
+          if (retryContext.previousRetryCount === 0) return 0;
+          if (retryContext.previousRetryCount === 1) return 2000;
+          if (retryContext.previousRetryCount === 2) return 10000;
+          if (retryContext.previousRetryCount === 3) return 30000;
+          return 60000;
+        }
+      })
+      .configureLogging(import.meta.env.DEV ? signalR.LogLevel.Information : signalR.LogLevel.Warning)
       .build();
+
+    // Reconnection handlers
+    this.notificationConnection.onreconnecting((error) => {
+      if (import.meta.env.DEV) console.warn('NotificationHub reconnecting...', error);
+    });
+
+    this.notificationConnection.onreconnected((connectionId) => {
+      if (import.meta.env.DEV) console.log('✅ NotificationHub reconnected:', connectionId);
+    });
+
+    this.notificationConnection.onclose((error) => {
+      if (import.meta.env.DEV) console.error('❌ NotificationHub connection closed:', error);
+    });
 
     try {
       await this.notificationConnection.start();
-      console.log('✅ NotificationHub connected');
+      if (import.meta.env.DEV) console.log('✅ NotificationHub connected');
     } catch (err) {
       console.error('❌ NotificationHub connection failed:', err);
+      throw err;
     }
   }
 
@@ -50,14 +96,14 @@ class SignalRService {
   async joinTicket(ticketId: string) {
     if (this.ticketConnection?.state === signalR.HubConnectionState.Connected) {
       await this.ticketConnection.invoke('JoinTicket', ticketId);
-      console.log(`Joined ticket ${ticketId}`);
+      if (import.meta.env.DEV) console.log(`Joined ticket ${ticketId}`);
     }
   }
 
   async leaveTicket(ticketId: string) {
     if (this.ticketConnection?.state === signalR.HubConnectionState.Connected) {
       await this.ticketConnection.invoke('LeaveTicket', ticketId);
-      console.log(`Left ticket ${ticketId}`);
+      if (import.meta.env.DEV) console.log(`Left ticket ${ticketId}`);
     }
   }
 
@@ -102,11 +148,11 @@ class SignalRService {
   async disconnect() {
     if (this.ticketConnection) {
       await this.ticketConnection.stop();
-      console.log('TicketHub disconnected');
+      if (import.meta.env.DEV) console.log('TicketHub disconnected');
     }
     if (this.notificationConnection) {
       await this.notificationConnection.stop();
-      console.log('NotificationHub disconnected');
+      if (import.meta.env.DEV) console.log('NotificationHub disconnected');
     }
   }
 

@@ -115,7 +115,7 @@ export default function DepartmentManager() {
       // Load SLA plans
       await loadSLAPlans();
     } catch (error) {
-      console.error('Error loading department data:', error);
+      if (import.meta.env.DEV) console.error('Error loading department data:', error);
       toast.error('Departman bilgileri yüklenemedi');
     } finally {
       setLoading(false);
@@ -144,7 +144,7 @@ export default function DepartmentManager() {
 
       setStaffMembers(membersWithStats);
     } catch (error) {
-      console.error('Error loading staff members:', error);
+      if (import.meta.env.DEV) console.error('Error loading staff members:', error);
       toast.error('Personel listesi yüklenemedi');
     }
   }
@@ -158,7 +158,7 @@ export default function DepartmentManager() {
       );
       setAllUsers(availableUsers);
     } catch (error) {
-      console.error('Error loading users:', error);
+      if (import.meta.env.DEV) console.error('Error loading users:', error);
       toast.error('Kullanıcı listesi yüklenemedi');
     }
   }
@@ -204,7 +204,7 @@ export default function DepartmentManager() {
       );
       setCategories(deptCategories);
     } catch (error) {
-      console.error('Error loading categories:', error);
+      if (import.meta.env.DEV) console.error('Error loading categories:', error);
     }
   }
 
@@ -213,7 +213,7 @@ export default function DepartmentManager() {
       const plans = await api.getSLAPlans();
       setSlaPlans(plans);
     } catch (error) {
-      console.error('Error loading SLA plans:', error);
+      if (import.meta.env.DEV) console.error('Error loading SLA plans:', error);
     }
   }
 

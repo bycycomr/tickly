@@ -105,12 +105,13 @@ public class SLAMonitoringService
         // Reassign to manager/supervisor
         if (escalationPolicy.ReassignToManager && ticket.DepartmentId.HasValue)
         {
-            // Find department manager
+            // Find department manager or team lead
             var managerUserId = await _db.RoleAssignments
                 .Where(ra => 
                     ra.TenantId == ticket.TenantId &&
                     ra.DepartmentId == ticket.DepartmentId &&
-                    ra.Role == RoleName.DepartmentManager)
+                    (ra.Role == RoleName.DepartmentManager || ra.Role == RoleName.TeamLead))
+                .OrderBy(ra => ra.Role) // DepartmentManager önce
                 .Select(ra => ra.UserId)
                 .FirstOrDefaultAsync();
 
@@ -124,11 +125,15 @@ public class SLAMonitoringService
         // Notify stakeholders (log for now, can integrate with notification service)
         if (escalationPolicy.NotifyStakeholders)
         {
-            _logger.LogWarning(
-                "SLA BREACH NOTIFICATION: Ticket {TicketId} breached SLA. Reason: {Reason}. Priority: {Priority}",
-                ticketId,
-                reason,
-                ticket.Priority);
+            // Only log in development environment
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                _logger.LogInformation(
+                    "SLA BREACH: Ticket {TicketId} breached SLA. Reason: {Reason}. Priority: {Priority}",
+                    ticketId,
+                    reason,
+                    ticket.Priority);
+            }
             escalated = true;
         }
 

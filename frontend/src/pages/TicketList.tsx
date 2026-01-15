@@ -6,22 +6,22 @@ import { Ticket } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
 const statusMap: Record<number, string> = {
-  0: 'New',
-  1: 'Assigned',
-  2: 'In Progress',
-  3: 'Waiting for Info',
-  4: 'Completed',
-  5: 'Closed',
-  6: 'Rejected',
-  7: 'Duplicate',
-  8: 'Merged'
+  0: 'Yeni',
+  1: 'Atandı',
+  2: 'İşlemde',
+  3: 'Bilgi Bekleniyor',
+  4: 'Tamamlandı',
+  5: 'Kapatıldı',
+  6: 'Reddedildi',
+  7: 'Tekrar',
+  8: 'Birleştirildi'
 }
 
 const priorityMap: Record<number, string> = {
-  0: 'Low',
+  0: 'Düşük',
   1: 'Normal',
-  2: 'High',
-  3: 'Urgent'
+  2: 'Yüksek',
+  3: 'Acil'
 }
 
 const statusColors: Record<number, string> = {
@@ -50,6 +50,9 @@ export default function TicketList() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
+  // Tab selection
+  const [activeTab, setActiveTab] = useState<'all' | 'myTickets'>('all')
+  
   // Basic filters
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all')
@@ -69,15 +72,12 @@ export default function TicketList() {
     setLoading(true)
     setError(null)
     try {
-      // SuperAdmin tüm ticket'ları görebilir, diğerleri sadece kendi departmanlarını
-      const isSuperAdmin = user?.roles?.includes('SuperAdmin')
-      const userDepartmentId = user?.departmentId
-      
+      // Backend zaten user'ın görebileceği ticket'ları filtreliyor
+      // DepartmentId filtresini göndermiyoruz - backend kendi mantığını uygulayacak
       const res = await api.getTickets({
         status: statusFilter !== 'all' ? statusFilter as number : undefined,
         priority: priorityFilter !== 'all' ? priorityFilter as number : undefined,
         search: search || undefined,
-        departmentId: !isSuperAdmin && userDepartmentId ? userDepartmentId : undefined
       })
       setTickets(res)
     } catch (e: any) {
@@ -93,6 +93,18 @@ export default function TicketList() {
   // Apply advanced filters and sorting
   const filteredAndSortedTickets = React.useMemo(() => {
     let result = [...tickets]
+
+    // Tab filter
+    if (activeTab === 'myTickets') {
+      // "Taleplerim": Sadece kendi açtığı tüm ticket'lar (tüm departmanlar)
+      result = result.filter(t => t.creatorId === user?.id)
+    } else {
+      // "Departman Talepleri": Sadece kendi departmanına gelen ticket'lar
+      const userDepartmentId = user?.departmentId
+      if (userDepartmentId) {
+        result = result.filter(t => t.departmentId === userDepartmentId)
+      }
+    }
 
     // Date range filter
     if (dateFrom) {
@@ -125,7 +137,7 @@ export default function TicketList() {
     })
 
     return result
-  }, [tickets, dateFrom, dateTo, sortBy, sortOrder])
+  }, [tickets, activeTab, user?.id, user?.departmentId, dateFrom, dateTo, sortBy, sortOrder])
 
   const totalPages = Math.ceil(filteredAndSortedTickets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -187,6 +199,30 @@ export default function TicketList() {
 
         {/* Filters Card with glassmorphism */}
         <div className="glass bg-white/70 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border-2 border-white/50 animate-slide-up">
+          {/* Tabs */}
+          <div className="flex gap-2 mb-6 p-1 bg-gradient-to-r from-indigo-100/50 to-purple-100/50 rounded-2xl">
+            <button
+              onClick={() => setActiveTab('all')}
+              className={`flex-1 px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
+                activeTab === 'all'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:bg-white/50'
+              }`}
+            >
+              Departman Talepleri
+            </button>
+            <button
+              onClick={() => setActiveTab('myTickets')}
+              className={`flex-1 px-6 py-3 rounded-xl font-bold transition-all duration-300 ${
+                activeTab === 'myTickets'
+                  ? 'bg-gradient-to-r from-pink-600 to-red-600 text-white shadow-lg transform scale-105'
+                  : 'text-gray-600 hover:bg-white/50'
+              }`}
+            >
+              Taleplerim
+            </button>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
@@ -207,15 +243,15 @@ export default function TicketList() {
                 className="input pl-10 bg-white/80 backdrop-blur-sm"
               >
                 <option value="all">Tüm Durumlar</option>
-                <option value="0">New</option>
-                <option value="1">Assigned</option>
-                <option value="2">In Progress</option>
-                <option value="3">Waiting for Info</option>
-                <option value="4">Completed</option>
-                <option value="5">Closed</option>
-                <option value="6">Rejected</option>
-                <option value="7">Duplicate</option>
-                <option value="8">Merged</option>
+                <option value="0">Yeni</option>
+                <option value="1">Atandı</option>
+                <option value="2">İşlemde</option>
+                <option value="3">Bilgi Bekleniyor</option>
+                <option value="4">Tamamlandı</option>
+                <option value="5">Kapatıldı</option>
+                <option value="6">Reddedildi</option>
+                <option value="7">Tekrar</option>
+                <option value="8">Birleştirildi</option>
               </select>
             </div>
 
@@ -227,10 +263,10 @@ export default function TicketList() {
                 className="input pl-10 bg-white/80 backdrop-blur-sm"
               >
                 <option value="all">Tüm Öncelikler</option>
-                <option value="0">Low</option>
+                <option value="0">Düşük</option>
                 <option value="1">Normal</option>
-                <option value="2">High</option>
-                <option value="3">Urgent</option>
+                <option value="2">Yüksek</option>
+                <option value="3">Acil</option>
               </select>
             </div>
           </div>

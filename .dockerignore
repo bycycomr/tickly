@@ -1,9 +1,0 @@
-node_modules
-dist
-bin
-obj
-**/.env
-**/.DS_Store
-frontend/node_modules
-backend/bin
-backend/obj

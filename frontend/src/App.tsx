@@ -41,7 +41,7 @@ function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex space-x-1">
                 <Link to="/dashboard" className="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-medium transition-all">
-                  Dashboard
+                  Ana Sayfa
                 </Link>
                 <Link to="/tickets" className="text-gray-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-lg text-sm font-medium transition-all">
                   Talepler
@@ -109,7 +109,7 @@ function Header() {
               onClick={() => setMobileOpen(false)}
               className="block px-4 py-2.5 rounded-lg text-base font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 transition-all"
             >
-              Dashboard
+              Ana Sayfa
             </Link>
             <Link
               to="/tickets"

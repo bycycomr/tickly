@@ -163,9 +163,15 @@ namespace Tickly.Api.Controllers
             if (user == null)
                 return Ok(new { message = "If the email exists, a reset link has been sent" });
 
-            // Generate reset token
-            var resetToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-            user.PasswordResetToken = resetToken;
+            // Generate cryptographically secure reset token (64 bytes = 512 bits)
+            var resetTokenBytes = RandomNumberGenerator.GetBytes(64);
+            var resetToken = Convert.ToBase64String(resetTokenBytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .Replace("=", ""); // URL-safe Base64
+            
+            // Hash the token before storing (defense in depth)
+            user.PasswordResetToken = BCrypt.Net.BCrypt.HashPassword(resetToken);
             user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1); // 1 hour expiry
             
             await _db.SaveChangesAsync();
@@ -191,14 +197,30 @@ namespace Tickly.Api.Controllers
             if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))
                 return BadRequest(new { error = "Token and new password are required" });
 
+            // Validate password strength (minimum 8 characters)
+            if (req.NewPassword.Length < 8)
+                return BadRequest(new { error = "Password must be at least 8 characters long" });
+
+            // Find user with non-expired reset token
             var user = _db.Users.FirstOrDefault(u => 
-                u.PasswordResetToken == req.Token && 
+                u.PasswordResetToken != null && 
                 u.PasswordResetTokenExpiry != null &&
                 u.PasswordResetTokenExpiry > DateTime.UtcNow
             );
 
             if (user == null)
                 return BadRequest(new { error = "Invalid or expired reset token" });
+
+            // Verify the token hash
+            try
+            {
+                if (!BCrypt.Net.BCrypt.Verify(req.Token, user.PasswordResetToken))
+                    return BadRequest(new { error = "Invalid or expired reset token" });
+            }
+            catch
+            {
+                return BadRequest(new { error = "Invalid or expired reset token" });
+            }
 
             // Update password
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);

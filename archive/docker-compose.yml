@@ -6,10 +6,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "1"
+      POSTGRES_PASSWORD: ${DB_POSTGRES_PASSWORD:-change_this_strong_password_123!}
       POSTGRES_DB: tickly_db
       APP_DB_USER: tickly_app
-      APP_DB_PASSWORD: tickly_app
+      APP_DB_PASSWORD: ${DB_APP_PASSWORD:-tickly_app_secure_pass_456!}
       APP_DB_SCHEMA: tickly_app
     volumes:
       - db_data:/var/lib/postgresql/data
@@ -25,7 +25,9 @@ services:
       - db
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Database=tickly_db;Username=tickly_app;Password=tickly_app;SearchPath=tickly_app,public
+      - ConnectionStrings__DefaultConnection=Host=db;Database=tickly_db;Username=tickly_app;Password=${DB_APP_PASSWORD:-tickly_app_secure_pass_456!};SearchPath=tickly_app,public
+      - Jwt__Key=${JWT_SECRET_KEY:-please_generate_a_secure_random_key_minimum_32_chars}
+      - InitialSuperAdmin__Password=${ADMIN_PASSWORD:-ChangeThisAdminPassword123!}
     ports:
       - "5000:5000"
 

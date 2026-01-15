@@ -1,5 +1,5 @@
 {
-   "checksum": "4977f8c45b57258c38affb74ea7eed63",
+   "checksum": "1981eea09e0d8afaed3f2ae402afe758",
    "roots": {
       "bookmark_bar": {
          "children": [ {
@@ -11,19 +11,15 @@
                "power_bookmark_meta": ""
             },
             "name": "22290210odev.pdf",
-            "show_icon": false,
-            "source": "sync",
             "type": "url",
-            "url": "file:///C:/Users/omer/Desktop/gizli_belgeler/%C3%A7al%C4%B1nt%C4%B1%20belgeler/22290210odev.pdf",
-            "visit_count": 1
+            "url": "file:///C:/Users/omer/Desktop/gizli_belgeler/%C3%A7al%C4%B1nt%C4%B1%20belgeler/22290210odev.pdf"
          } ],
          "date_added": "13407885244628406",
          "date_last_used": "0",
          "date_modified": "13374096904354599",
          "guid": "0bc5d13f-2cba-5d74-951f-3f233fe6c908",
          "id": "1",
-         "name": "Sık kullanılanlar çubuğu",
-         "source": "unknown",
+         "name": "Yer işaretleri çubuğu",
          "type": "folder"
       },
       "other": {
@@ -33,8 +29,7 @@
          "date_modified": "0",
          "guid": "82b081ec-3dd3-529c-8475-ab6c344590dd",
          "id": "2",
-         "name": "Diğer sık kullanılanlar",
-         "source": "unknown",
+         "name": "Diğer yer işaretleri",
          "type": "folder"
       },
       "synced": {
@@ -44,11 +39,9 @@
          "date_modified": "0",
          "guid": "4cf2e351-0e85-532b-bb37-df045d8f8d0f",
          "id": "3",
-         "name": "Mobil sık kullanılanlar",
-         "source": "unknown",
+         "name": "Mobil yer işaretleri",
          "type": "folder"
       }
    },
-   "sync_metadata": "CkEKHgiIgQISCKIUgpOaAQAAKg4QABgBIAAoBjAAOABAABIAKhhmM2ZTOTZ6REoxNkdTdUp1NlFUamNRPT1IA6AGDBKsAQgGEqcBChxvRFZlL2tyNTErWnAvVEllYmFtNCtaTHV0ZFE9EiRkZDUzZmRhNC05OTUyLTQyNzktODI5MC01OWI4M2Q5NzUzYjUYACAAKAAwyuHUrKsyOO3h1KyrMkDt4dSsqzJKHEl6WkcrODMxYXNkblJKcDZNd1dLQmRuRG9BST1aHiIcQnpDdXB5VTQwc0hvZXY5eFZKazIvRWs3ZE84PWV3cGyjwj4CYAUSjgEIAhKJAQocWWNTVG9udkVTUHdxQ3M0TDJjclZodjY4TDk4PRIkZWY2MWU4MTUtY2U1Ni01YWIyLTgwODEtNDhjMGVkMmQ2YzI5GAAgACgAMKSr57OuMTjtreezrjFA7a3ns64xShxvUFZraHdCUmJWNjVLQ1dSMitJT05IV29PdTg9WgBlAAAAAMI+AmAAEo4BCAESiQEKHHl4Si82ZnZrZWNyN2twNUVRekI0dFdMcGRiRT0SJDU1ODk4OTEzLTNiY2ItNTJiOC1hYzkzLWUyMmQ3N2NhZWJiYhgAIAAoADCjq+ezrjE41q3ns64xQNat57OuMUocYVJDV0xnaEY5YjVJbnFLSUR2dUovanZRa0ZjPVoAZQAAAADCPgJgABKOAQgDEokBChxuamdEdTg4ZUNydlhwODZwRDdmSEdjcUZwODg9EiQ1YTg0MTRmMi0yNDcxLTVlMjUtYWU2ZS1iNWI5Y2EyZWE2MmIYACAAKAAwqavns64xOKSu57OuMUCkruezrjFKHHl6TkIwMWNuNTRBN2NSVTB1VCsvUGdtVHRVbz1aAGUAAAAAwj4CYAAwADgA",
    "version": 1
 }

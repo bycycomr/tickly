@@ -73,9 +73,36 @@ namespace Tickly.Api.Services
 
                 if (user == null)
                 {
-                    _logger.LogWarning("User not found for email {Email}, cannot create ticket", emailInbound.FromAddress);
-                    await MarkAsFailedAsync(emailInboundId, "User not found");
-                    return null;
+                    // Auto-create user as EndUser when receiving email from unknown address
+                    _logger.LogInformation("Auto-creating user for email {Email}", emailInbound.FromAddress);
+                    
+                    user = new User
+                    {
+                        TenantId = emailInbound.TenantId,
+                        Username = emailInbound.FromAddress.Split('@')[0], // Use email prefix as username
+                        Email = emailInbound.FromAddress,
+                        DisplayName = emailInbound.FromAddress.Split('@')[0],
+                        AuthProvider = AuthProvider.Local,
+                        Status = UserStatus.Active,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    
+                    _context.Users.Add(user);
+                    await _context.SaveChangesAsync();
+                    
+                    // Assign EndUser role
+                    var roleAssignment = new RoleAssignment
+                    {
+                        UserId = user.Id,
+                        TenantId = emailInbound.TenantId,
+                        Role = RoleName.EndUser,
+                        AssignedAt = DateTime.UtcNow
+                    };
+                    
+                    _context.RoleAssignments.Add(roleAssignment);
+                    await _context.SaveChangesAsync();
+                    
+                    _logger.LogInformation("User created and assigned EndUser role: {UserId} ({Email})", user.Id, user.Email);
                 }
 
                 // Parse email body from JSON

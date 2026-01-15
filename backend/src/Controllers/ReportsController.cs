@@ -27,10 +27,44 @@ public class ReportsController : ControllerBase
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboardStats([FromQuery] Guid? tenantId, [FromQuery] int? departmentId)
     {
+        var userId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (userId == null) return Unauthorized();
+        
+        var isSuperAdmin = User?.IsInRole(RoleName.SuperAdmin.ToString()) ?? false;
+        
         var query = _db.Tickets.AsQueryable();
 
         if (tenantId.HasValue)
             query = query.Where(t => t.TenantId == tenantId.Value);
+
+        // SuperAdmin değilse, sadece kendi departmanlarının veya kendi açtığı ticket'ların istatistiklerini göster
+        if (!isSuperAdmin)
+        {
+            var deptRoleClaims = User?.FindAll("dept_role") ?? Enumerable.Empty<System.Security.Claims.Claim>();
+            var userDeptIds = new List<int>();
+            
+            foreach (var claim in deptRoleClaims)
+            {
+                var parts = claim.Value.Split(':', 2);
+                if (parts.Length == 2 && int.TryParse(parts[0], out var deptId))
+                {
+                    userDeptIds.Add(deptId);
+                }
+            }
+            
+            if (userDeptIds.Any())
+            {
+                query = query.Where(t => 
+                    (t.DepartmentId != null && userDeptIds.Contains(t.DepartmentId.Value)) 
+                    || t.CreatorId == userId
+                );
+            }
+            else
+            {
+                // EndUser: sadece kendi ticket'larını göster
+                query = query.Where(t => t.CreatorId == userId || t.AssignedToUserId == userId);
+            }
+        }
 
         if (departmentId.HasValue)
             query = query.Where(t => t.DepartmentId == departmentId.Value);

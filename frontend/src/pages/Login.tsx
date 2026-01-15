@@ -146,6 +146,20 @@ export default function Login() {
             <span className="font-semibold text-gray-700">Demo:</span> mehmet.kaya / Password123
           </p>
         </div>
+
+        {/* Email support info */}
+        <div className="mt-4 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200">
+          <p className="text-xs text-gray-700 text-center">
+            💡 Sisteme erişemediğiniz durumlarda{' '}
+            <a 
+              href="mailto:ticklydestek@gmail.com" 
+              className="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline transition-colors"
+            >
+              ticklydestek@gmail.com
+            </a>
+            {' '}adresine mail atarak ticket açabilirsiniz.
+          </p>
+        </div>
       </div>
     </div>
   );

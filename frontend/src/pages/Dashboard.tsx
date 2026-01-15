@@ -31,18 +31,15 @@ export default function Dashboard() {
     try {
       setLoading(true);
       
-      // Kullanıcının departmanını ve rolünü kontrol et
-      const isSuperAdmin = user?.roles?.includes('SuperAdmin');
-      const userDepartmentId = user?.departmentId;
-      
-      // Eğer SuperAdmin değilse ve bir departmana atanmışsa, o departmanın stats'ını göster
-      const departmentFilter = !isSuperAdmin && userDepartmentId ? userDepartmentId : undefined;
-      
-      const data = await api.getDashboardStats(undefined, departmentFilter);
+      // Backend kendi yetkilendirme mantığını uygulayacak
+      // SuperAdmin: tüm stats, diğerleri: kendi departmanlarının stats
+      const data = await api.getDashboardStats(undefined, undefined);
       setStats(data);
     } catch (err: any) {
       setError('Dashboard yüklenemedi');
-      console.error(err);
+      if (import.meta.env.DEV) {
+        console.error('Dashboard load error:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -113,7 +110,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Dashboard
+                  Ana Sayfa
                 </h1>
                 <p className="text-sm text-gray-700 font-medium">
                   Hoş geldiniz, <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{user?.displayName || user?.username}</span> 👋
@@ -192,7 +189,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-bold text-green-700 uppercase tracking-wide">SLA Uyum</p>
                 <p className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mt-2">
-                  {stats?.slaComplianceRate ? `${Math.round(stats.slaComplianceRate)}%` : 'N/A'}
+                  {stats?.slaComplianceRate ? `${Math.round(stats.slaComplianceRate)}%` : '—'}
                 </p>
                 <p className="text-xs text-gray-600 mt-1">Performans skoru</p>
               </div>
@@ -246,6 +243,15 @@ export default function Dashboard() {
                 ? stats.byStatus.map((item: any) => {
                     const status = item.status;
                     const countValue = item.count || 0;
+                    const statusNames: Record<string, string> = {
+                      'New': 'Yeni',
+                      'Assigned': 'Atandı',
+                      'InProgress': 'İşlemde',
+                      'Completed': 'Tamamlandı',
+                      'Closed': 'Kapatıldı',
+                      'Rejected': 'Reddedildi'
+                    };
+                    const displayName = statusNames[status] || status;
                     const statusColors: Record<string, string> = {
                       'New': 'bg-blue-100 text-blue-700',
                       'Assigned': 'bg-purple-100 text-purple-700',
@@ -258,13 +264,22 @@ export default function Dashboard() {
                     
                     return (
                       <div key={status} className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg hover:shadow-md transition-all duration-200 border border-gray-100">
-                        <span className="text-sm font-semibold text-gray-700">{status}</span>
+                        <span className="text-sm font-semibold text-gray-700">{displayName}</span>
                         <span className={`px-4 py-1.5 ${colorClass} rounded-full text-sm font-bold shadow-sm`}>{countValue}</span>
                       </div>
                     );
                   })
                 : Object.entries(stats.byStatus).map(([status, count]) => {
                     const countValue = typeof count === 'number' ? count : (typeof count === 'object' && count !== null ? (count as any).count || 0 : 0);
+                    const statusNames: Record<string, string> = {
+                      'New': 'Yeni',
+                      'Assigned': 'Atandı',
+                      'InProgress': 'İşlemde',
+                      'Completed': 'Tamamlandı',
+                      'Closed': 'Kapatıldı',
+                      'Rejected': 'Reddedildi'
+                    };
+                    const displayName = statusNames[status] || status;
                     const statusColors: Record<string, string> = {
                       'New': 'bg-blue-100 text-blue-700',
                       'InProgress': 'bg-yellow-100 text-yellow-700',
@@ -275,7 +290,7 @@ export default function Dashboard() {
                     
                     return (
                       <div key={status} className="flex justify-between items-center p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg hover:shadow-md transition-all duration-200 border border-gray-100">
-                        <span className="text-sm font-semibold text-gray-700">{status}</span>
+                        <span className="text-sm font-semibold text-gray-700">{displayName}</span>
                         <span className={`px-4 py-1.5 ${colorClass} rounded-full text-sm font-bold shadow-sm`}>{countValue}</span>
                       </div>
                     );
@@ -296,8 +311,25 @@ export default function Dashboard() {
               ).map((item: any, index: number) => {
                 const priority = Array.isArray(item) ? item[0] : item.priority;
                 const count = Array.isArray(item) ? item[1] : item.count;
+                
+                // Öncelik isimlerini Türkçeye çevir
+                const priorityNames: Record<string, string> = {
+                  'Critical': 'Kritik',
+                  'Urgent': 'Acil',
+                  'High': 'Yüksek',
+                  'Normal': 'Normal',
+                  'Low': 'Düşük'
+                };
+                const displayName = priorityNames[priority] || priority;
+                
                 const colors: Record<string, { bg: string; text: string; gradient: string; icon: string }> = {
                   Critical: { 
+                    bg: 'bg-purple-100', 
+                    text: 'text-purple-800', 
+                    gradient: 'from-purple-700 to-purple-900',
+                    icon: '🟣'
+                  },
+                  Urgent: { 
                     bg: 'bg-red-100', 
                     text: 'text-red-700', 
                     gradient: 'from-red-500 to-red-600',
@@ -329,7 +361,7 @@ export default function Dashboard() {
                   <div key={priority} className="text-center p-4 rounded-xl hover:shadow-md transition-all duration-200 bg-gradient-to-br from-gray-50 to-white border border-gray-100">
                     <div className="flex items-center justify-center gap-2 mb-3">
                       <span className="text-lg">{color.icon}</span>
-                      <p className="text-sm font-semibold text-gray-700">{priority}</p>
+                      <p className="text-sm font-semibold text-gray-700">{displayName}</p>
                     </div>
                     <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br ${color.gradient} text-white shadow-lg mb-2 transform hover:scale-110 transition-transform duration-200`}>
                       <span className="text-3xl font-bold">{countValue}</span>

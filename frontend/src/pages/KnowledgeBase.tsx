@@ -28,10 +28,10 @@ export default function KnowledgeBase() {
 
   async function loadDepartments() {
     try {
-      const depts = await api.getDepartments();
-      setDepartments(depts);
+      const depts = await api.getDepartments()
+      setDepartments(depts)
     } catch (err) {
-      console.error('Departmanlar yüklenemedi', err);
+      if (import.meta.env.DEV) console.error('Departmanlar yüklenemedi', err)
     }
   }
 

@@ -125,7 +125,7 @@ export default function Reports() {
             <div>
               <p className="text-sm text-gray-600 font-semibold">SLA Uyum</p>
               <p className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                {stats?.slaComplianceRate ? `${(stats.slaComplianceRate * 100).toFixed(0)}%` : 'N/A'}
+                {stats?.slaComplianceRate ? `${(stats.slaComplianceRate * 100).toFixed(0)}%` : '—'}
               </p>
             </div>
             <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl shadow-lg">
@@ -143,9 +143,18 @@ export default function Reports() {
               ? stats.byStatus.map((item: any) => {
                   const status = item.status;
                   const count = item.count || 0;
+                  const statusNames: Record<string, string> = {
+                    'New': 'Yeni',
+                    'Assigned': 'Atandı',
+                    'InProgress': 'İşlemde',
+                    'Completed': 'Tamamlandı',
+                    'Closed': 'Kapatıldı',
+                    'Rejected': 'Reddedildi'
+                  };
+                  const displayName = statusNames[status] || status;
                   return (
                     <div key={status} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{status}</span>
+                      <span className="text-sm text-gray-700">{displayName}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -160,9 +169,18 @@ export default function Reports() {
                 })
               : Object.entries(stats.byStatus).map(([key, value]) => {
                   const count = typeof value === 'number' ? value : (value as any).count || 0;
+                  const statusNames: Record<string, string> = {
+                    'New': 'Yeni',
+                    'Assigned': 'Atandı',
+                    'InProgress': 'İşlemde',
+                    'Completed': 'Tamamlandı',
+                    'Closed': 'Kapatıldı',
+                    'Rejected': 'Reddedildi'
+                  };
+                  const displayName = statusNames[key] || key;
                   return (
                     <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{key}</span>
+                      <span className="text-sm text-gray-700">{displayName}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -186,6 +204,14 @@ export default function Reports() {
               ? stats.byPriority.map((item: any) => {
                   const priority = item.priority;
                   const count = item.count || 0;
+                  const priorityNames: Record<string, string> = {
+                    'Critical': 'Kritik',
+                    'Urgent': 'Acil',
+                    'High': 'Yüksek',
+                    'Normal': 'Normal',
+                    'Low': 'Düşük'
+                  };
+                  const displayName = priorityNames[priority] || priority;
                   const colors: Record<string, string> = {
                     Low: 'bg-gray-600',
                     Normal: 'bg-blue-600',
@@ -195,7 +221,7 @@ export default function Reports() {
                   };
                   return (
                     <div key={priority} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{priority}</span>
+                      <span className="text-sm text-gray-700">{displayName}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div
@@ -210,16 +236,24 @@ export default function Reports() {
                 })
               : Object.entries(stats.byPriority).map(([key, value]) => {
                   const count = typeof value === 'number' ? value : (value as any).count || 0;
+                  const priorityNames: Record<string, string> = {
+                    'Critical': 'Kritik',
+                    'Urgent': 'Acil',
+                    'High': 'Yüksek',
+                    'Normal': 'Normal',
+                    'Low': 'Düşük'
+                  };
+                  const displayName = priorityNames[key] || key;
                   const colors: Record<string, string> = {
                     Low: 'bg-gray-600',
                     Normal: 'bg-blue-600',
                     High: 'bg-orange-600',
                     Urgent: 'bg-red-600',
-                    Critical: 'bg-red-800'
+                    Critical: 'bg-purple-800'
                   };
                   return (
                     <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{key}</span>
+                      <span className="text-sm text-gray-700">{displayName}</span>
                       <div className="flex items-center space-x-2">
                         <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                           <div

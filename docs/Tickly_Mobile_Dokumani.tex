@@ -1,0 +1,1188 @@
+\documentclass[12pt,a4paper]{article}
+
+% Paketler
+\usepackage[utf8]{inputenc}
+\usepackage[turkish]{babel}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tcolorbox}
+\usepackage{hyperref}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, shadows}
+
+% Sayfa ayarları
+\geometry{
+    a4paper,
+    left=2.5cm,
+    right=2.5cm,
+    top=3cm,
+    bottom=3cm
+}
+
+% Başlık stili
+\titleformat{\section}
+{\color{blue!70!black}\normalfont\Large\bfseries}
+{\thesection}{1em}{}
+
+\titleformat{\subsection}
+{\color{blue!50!black}\normalfont\large\bfseries}
+{\thesubsection}{1em}{}
+
+% Header ve Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textit{Tickly Mobile}}
+\fancyhead[R]{\textit{Flutter iOS Uygulaması}}
+\fancyfoot[C]{\thepage}
+
+% Hyperlink ayarları
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    pdftitle={Tickly Mobile Dokümantasyonu},
+    pdfpagemode=FullScreen,
+}
+
+% Kod bloğu ayarları (Dart için)
+\lstdefinelanguage{Dart}{
+    keywords={abstract, as, assert, async, await, break, case, catch, class, const, continue, default, deferred, do, dynamic, else, enum, export, extends, external, factory, false, final, finally, for, get, if, implements, import, in, is, library, new, null, operator, part, rethrow, return, set, static, super, switch, this, throw, true, try, typedef, var, void, while, with, yield},
+    keywordstyle=\color{blue}\bfseries,
+    ndkeywords={String, int, double, bool, List, Map, Future, Stream, Widget, State, StatelessWidget, StatefulWidget, BuildContext, Provider, TextEditingController},
+    ndkeywordstyle=\color{purple}\bfseries,
+    sensitive=true,
+    comment=[l]{//},
+    morecomment=[s]{/*}{*/},
+    commentstyle=\color{green!60!black}\ttfamily,
+    stringstyle=\color{red}\ttfamily,
+    morestring=[b]',
+    morestring=[b]"
+}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    language=Dart
+}
+
+% TikZ stil tanımları
+\tikzstyle{screen} = [rectangle, rounded corners, minimum width=3cm, minimum height=1.2cm, text centered, draw=black, fill=blue!20, drop shadow]
+\tikzstyle{service} = [rectangle, minimum width=3cm, minimum height=1cm, text centered, draw=black, fill=green!20]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+\begin{document}
+
+% Kapak Sayfası
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    
+    {\Huge \textbf{TICKLY MOBILE}}\\[0.5cm]
+    {\LARGE Flutter iOS Uygulaması}\\[2cm]
+    
+    {\Large \textbf{Mobil Uygulama Dokümantasyonu}}\\[1cm]
+    
+    \vfill
+    
+    \begin{tcolorbox}[colback=blue!5!white,colframe=blue!75!black,title=Proje Bilgileri]
+        \begin{itemize}[leftmargin=*]
+            \item \textbf{Proje Adı:} Tickly Mobile - iOS App
+            \item \textbf{Platform:} iOS (iPhone/iPad)
+            \item \textbf{Framework:} Flutter 3.16+
+            \item \textbf{Dil:} Dart 3.2+
+            \item \textbf{Versiyon:} 1.0.0
+            \item \textbf{Minimum iOS:} 12.0
+            \item \textbf{Tarih:} Ocak 2026
+        \end{itemize}
+    \end{tcolorbox}
+    
+    \vfill
+    
+    {\large \today}
+\end{titlepage}
+
+% İçindekiler
+\tableofcontents
+\newpage
+
+% Giriş
+\section{Proje Genel Bakış}
+
+\subsection{Uygulama Tanımı}
+
+\textbf{Tickly Mobile}, Tickly Help Desk sisteminin iOS mobil uygulamasıdır. Flutter framework'ü kullanılarak geliştirilmiştir ve kullanıcıların mobil cihazlarından ticket oluşturmasına, takip etmesine ve yönetmesine olanak sağlar.
+
+\begin{tcolorbox}[colback=green!5!white,colframe=green!75!black,title=Ana Hedef]
+Kullanıcıların her yerden, her zaman ticket sistemine erişim sağlaması, anında bildirim alması ve mobil-friendly bir deneyim yaşaması.
+\end{tcolorbox}
+
+\subsection{Ana Özellikler}
+
+\begin{itemize}
+    \item \textbf{Kullanıcı Kimlik Doğrulama:} JWT token tabanlı güvenli giriş
+    \item \textbf{Ticket Listeleme:} Tüm ticket'ları görüntüleme ve filtreleme
+    \item \textbf{Ticket Oluşturma:} Yeni ticket açma, dosya ekleme
+    \item \textbf{Ticket Detayı:} Ticket bilgileri, yorumlar, geçmiş
+    \item \textbf{Yorum Sistemi:} Ticket'lara yorum ekleme
+    \item \textbf{Dosya Ekleme:} Fotoğraf ve doküman yükleme
+    \item \textbf{Push Notifications:} Anlık bildirimler (opsiyonel)
+    \item \textbf{Dashboard:} İstatistikler ve grafikler
+    \item \textbf{Dark Mode:} Koyu tema desteği
+    \item \textbf{Offline Support:} Temel veri önbelleği
+\end{itemize}
+
+\subsection{Desteklenen Platformlar}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|c|}
+\hline
+\textbf{Platform} & \textbf{Minimum Versiyon} \\
+\hline
+iOS & 12.0+ \\
+iPadOS & 12.0+ \\
+\hline
+\end{tabular}
+\caption{Platform Gereksinimleri}
+\end{table}
+
+\textbf{Not:} Uygulama öncelikli olarak iOS için geliştirilmiştir, ancak Flutter'ın cross-platform doğası sayesinde Android'e de kolayca port edilebilir.
+
+\newpage
+
+\section{Teknoloji Stack}
+
+\subsection{Core Technologies}
+
+\begin{longtable}{|l|c|p{7cm}|}
+\hline
+\textbf{Teknoloji} & \textbf{Versiyon} & \textbf{Kullanım Amacı} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Teknoloji} & \textbf{Versiyon} & \textbf{Kullanım Amacı} \\
+\hline
+\endhead
+Flutter & 3.16+ & UI framework, cross-platform development \\
+\hline
+Dart & 3.2+ & Programlama dili, null-safety \\
+\hline
+Material Design & 3.0 & UI component library \\
+\hline
+Cupertino Widgets & - & iOS-native görünüm \\
+\hline
+\caption{Core Teknolojiler}
+\end{longtable}
+
+\subsection{Flutter Packages}
+
+\begin{longtable}{|l|c|p{7cm}|}
+\hline
+\textbf{Package} & \textbf{Versiyon} & \textbf{Kullanım Amacı} \\
+\hline
+\endfirsthead
+\hline
+\textbf{Package} & \textbf{Versiyon} & \textbf{Kullanım Amacı} \\
+\hline
+\endhead
+provider & 6.1.1 & State management, dependency injection \\
+\hline
+http & 1.1.0 & HTTP client, REST API çağrıları \\
+\hline
+shared\_preferences & 2.2.2 & Local storage, token saklama \\
+\hline
+image\_picker & 1.0.7 & Kamera ve galeri erişimi \\
+\hline
+file\_picker & 6.1.1 & Dosya seçme, doküman yükleme \\
+\hline
+signalr\_netcore & 1.3.7 & Real-time WebSocket bağlantısı \\
+\hline
+fl\_chart & 0.66.0 & Grafikler ve chart'lar \\
+\hline
+flutter\_local\_notifications & 16.3.0 & Push notification desteği \\
+\hline
+intl & 0.18.1 & Internationalization, tarih formatı \\
+\hline
+\caption{Flutter Packages}
+\end{longtable}
+
+\subsection{Backend Integration}
+
+\textbf{API Base URL:}
+\begin{itemize}
+    \item Development: \texttt{http://localhost:5000/api}
+    \item Production: \texttt{https://api.tickly.yourcompany.com/api}
+\end{itemize}
+
+\textbf{Kullanılan Endpoint'ler:}
+\begin{itemize}
+    \item \texttt{POST /api/auth/login} - Kullanıcı girişi
+    \item \texttt{GET /api/auth/me} - Kullanıcı bilgisi
+    \item \texttt{GET /api/tickets} - Ticket listesi
+    \item \texttt{POST /api/tickets} - Yeni ticket oluştur
+    \item \texttt{GET /api/tickets/\{id\}} - Ticket detayı
+    \item \texttt{POST /api/tickets/\{id\}/comments} - Yorum ekle
+    \item \texttt{PUT /api/tickets/\{id\}/status} - Durum güncelle
+    \item \texttt{GET /api/departments} - Departman listesi
+    \item \texttt{GET /api/categories} - Kategori listesi
+\end{itemize}
+
+\newpage
+
+\section{Uygulama Mimarisi}
+
+\subsection{Genel Mimari}
+
+Tickly Mobile, \textbf{Provider} pattern kullanarak state management sağlar ve katmanlı mimari prensiplerine uygun geliştirilmiştir.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=2.5cm]
+
+% UI Layer
+\node (ui) [screen, fill=blue!30] {UI LAYER\\Screens \& Widgets};
+
+% Provider Layer
+\node (provider) [service, below of=ui, fill=green!30] {PROVIDER LAYER\\State Management};
+
+% Service Layer
+\node (service) [service, below of=provider, fill=yellow!30] {SERVICE LAYER\\API \& Business Logic};
+
+% Model Layer
+\node (model) [service, below of=service, fill=orange!30] {MODEL LAYER\\Data Models};
+
+% Backend
+\node (backend) [service, below of=model, fill=red!30] {BACKEND API\\REST + SignalR};
+
+% Arrows
+\draw [arrow, <->] (ui) -- (provider);
+\draw [arrow, <->] (provider) -- (service);
+\draw [arrow, <->] (service) -- (model);
+\draw [arrow, <->] (model) -- node[anchor=east] {HTTP/WebSocket} (backend);
+
+\end{tikzpicture}
+\caption{Tickly Mobile Katmanlı Mimari}
+\end{figure}
+
+\subsection{Proje Klasör Yapısı}
+
+\begin{lstlisting}[language=bash, numbers=none]
+tickly_mobile/
+├── lib/
+│   ├── main.dart                    # Entry point
+│   │
+│   ├── models/                      # Data Models
+│   │   ├── user.dart
+│   │   ├── ticket.dart
+│   │   ├── comment.dart
+│   │   ├── department.dart
+│   │   ├── category.dart
+│   │   └── attachment.dart
+│   │
+│   ├── services/                    # Business Logic & API
+│   │   ├── api_service.dart        # Base HTTP client
+│   │   ├── auth_service.dart       # Authentication
+│   │   ├── ticket_service.dart     # Ticket operations
+│   │   ├── notification_service.dart# Push notifications
+│   │   └── signalr_service.dart    # Real-time messaging
+│   │
+│   ├── providers/                   # State Management
+│   │   ├── auth_provider.dart      # Auth state
+│   │   ├── ticket_provider.dart    # Ticket state
+│   │   └── theme_provider.dart     # Theme state
+│   │
+│   ├── screens/                     # UI Screens
+│   │   ├── login_screen.dart
+│   │   ├── ticket_list_screen.dart
+│   │   ├── create_ticket_screen.dart
+│   │   ├── ticket_detail_screen.dart
+│   │   ├── dashboard_screen.dart
+│   │   └── profile_screen.dart
+│   │
+│   ├── widgets/                     # Reusable Widgets
+│   │   ├── ticket_card.dart
+│   │   ├── comment_item.dart
+│   │   ├── custom_button.dart
+│   │   └── loading_indicator.dart
+│   │
+│   └── utils/                       # Utilities
+│       ├── constants.dart
+│       ├── theme.dart
+│       └── validators.dart
+│
+├── pubspec.yaml                     # Dependencies
+├── ios/                             # iOS-specific files
+└── test/                            # Unit tests
+\end{lstlisting}
+
+\newpage
+
+\section{Ekran Tasarımları ve Akışı}
+
+\subsection{Uygulama Ekranları}
+
+\begin{enumerate}
+    \item \textbf{Splash Screen}
+    \begin{itemize}
+        \item Uygulama açılış ekranı
+        \item Token kontrolü yapar
+        \item Authenticated ise Ticket List'e, değilse Login'e yönlendirir
+    \end{itemize}
+    
+    \item \textbf{Login Screen}
+    \begin{itemize}
+        \item Email ve şifre ile giriş
+        \item "Beni Hatırla" seçeneği
+        \item JWT token alır ve shared\_preferences'a kaydeder
+    \end{itemize}
+    
+    \item \textbf{Ticket List Screen}
+    \begin{itemize}
+        \item Tüm ticket'ları listeler
+        \item Filtreleme: Durum, öncelik, departman
+        \item Arama fonksiyonu
+        \item Pull-to-refresh
+        \item FAB (Floating Action Button) ile yeni ticket
+    \end{itemize}
+    
+    \item \textbf{Create Ticket Screen}
+    \begin{itemize}
+        \item Başlık, açıklama, departman, kategori seçimi
+        \item Öncelik seçimi (Low, Medium, High, Critical)
+        \item Dosya ve fotoğraf ekleme
+        \item Form validation
+    \end{itemize}
+    
+    \item \textbf{Ticket Detail Screen}
+    \begin{itemize}
+        \item Ticket bilgileri (başlık, durum, öncelik, atanan kişi)
+        \item Yorumlar listesi
+        \item Yeni yorum ekleme
+        \item Durum güncelleme (Agent ve Admin için)
+        \item Ekleri görüntüleme
+    \end{itemize}
+    
+    \item \textbf{Dashboard Screen}
+    \begin{itemize}
+        \item Özet istatistikler (açık, çözülen, kapalı ticket sayıları)
+        \item Grafikler (fl\_chart ile)
+        \item Son aktiviteler
+    \end{itemize}
+    
+    \item \textbf{Profile Screen}
+    \begin{itemize}
+        \item Kullanıcı bilgileri
+        \item Tema değiştirme (Light/Dark)
+        \item Bildirim ayarları
+        \item Çıkış yapma
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Navigasyon Akışı}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[node distance=2cm]
+
+\node (splash) [screen] {Splash Screen};
+\node (login) [screen, below left of=splash, xshift=-1cm] {Login Screen};
+\node (tickets) [screen, below right of=splash, xshift=1cm] {Ticket List};
+\node (create) [screen, below of=tickets, yshift=-1cm] {Create Ticket};
+\node (detail) [screen, right of=create, xshift=2cm] {Ticket Detail};
+\node (dashboard) [screen, left of=create, xshift=-2cm] {Dashboard};
+
+\draw [arrow] (splash) -- node[anchor=south east] {Not Auth} (login);
+\draw [arrow] (splash) -- node[anchor=south west] {Auth} (tickets);
+\draw [arrow] (login) -- node[anchor=west] {Login Success} (tickets);
+\draw [arrow] (tickets) -- node[anchor=east] {FAB} (create);
+\draw [arrow] (tickets) -- node[anchor=north] {Tap Ticket} (detail);
+\draw [arrow] (tickets) -- node[anchor=north] {Bottom Nav} (dashboard);
+
+\end{tikzpicture}
+\caption{Navigasyon Akış Diyagramı}
+\end{figure}
+
+\newpage
+
+\section{State Management ve Provider Pattern}
+
+\subsection{Provider Mimarisi}
+
+Tickly Mobile, state management için \textbf{Provider} package'ını kullanır. Her major özellik için ayrı provider'lar oluşturulmuştur.
+
+\subsubsection{AuthProvider}
+
+\begin{lstlisting}[language=Dart]
+class AuthProvider extends ChangeNotifier {
+  String? _token;
+  User? _user;
+  bool _isLoading = false;
+  
+  bool get isAuthenticated => _token != null;
+  User? get user => _user;
+  bool get isLoading => _isLoading;
+  
+  Future<bool> login(String email, String password) async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final response = await AuthService.login(email, password);
+      _token = response['token'];
+      _user = User.fromJson(response['user']);
+      
+      // Save token to SharedPreferences
+      await _saveToken(_token!);
+      
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return false;
+    }
+  }
+  
+  Future<void> logout() async {
+    _token = null;
+    _user = null;
+    await _clearToken();
+    notifyListeners();
+  }
+  
+  Future<void> _saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('auth_token', token);
+  }
+  
+  Future<void> _clearToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+  }
+}
+\end{lstlisting}
+
+\subsubsection{TicketProvider}
+
+\begin{lstlisting}[language=Dart]
+class TicketProvider extends ChangeNotifier {
+  List<Ticket> _tickets = [];
+  Ticket? _currentTicket;
+  bool _isLoading = false;
+  String? _error;
+  
+  List<Ticket> get tickets => _tickets;
+  Ticket? get currentTicket => _currentTicket;
+  bool get isLoading => _isLoading;
+  String? get error => _error;
+  
+  Future<void> fetchTickets() async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+    
+    try {
+      _tickets = await TicketService.getTickets();
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+  
+  Future<bool> createTicket(TicketCreateDto dto) async {
+    try {
+      final newTicket = await TicketService.createTicket(dto);
+      _tickets.insert(0, newTicket);
+      notifyListeners();
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+  
+  Future<void> fetchTicketDetail(int id) async {
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      _currentTicket = await TicketService.getTicketById(id);
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _error = e.toString();
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\section{API Entegrasyonu}
+
+\subsection{Base API Service}
+
+\begin{lstlisting}[language=Dart]
+class ApiService {
+  static const String baseUrl = 'http://localhost:5000/api';
+  
+  static Future<Map<String, dynamic>> get(
+    String endpoint,
+    {String? token}
+  ) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    
+    final response = await http.get(url, headers: headers);
+    
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load data');
+    }
+  }
+  
+  static Future<Map<String, dynamic>> post(
+    String endpoint,
+    Map<String, dynamic> body,
+    {String? token}
+  ) async {
+    final url = Uri.parse('$baseUrl$endpoint');
+    final headers = {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+    
+    final response = await http.post(
+      url,
+      headers: headers,
+      body: json.encode(body),
+    );
+    
+    if (response.statusCode == 200 || 
+        response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to post data');
+    }
+  }
+}
+\end{lstlisting}
+
+\subsection{Ticket Service}
+
+\begin{lstlisting}[language=Dart]
+class TicketService {
+  static Future<List<Ticket>> getTickets() async {
+    final token = await _getToken();
+    final data = await ApiService.get('/tickets', token: token);
+    
+    return (data as List)
+        .map((json) => Ticket.fromJson(json))
+        .toList();
+  }
+  
+  static Future<Ticket> getTicketById(int id) async {
+    final token = await _getToken();
+    final data = await ApiService.get(
+      '/tickets/$id',
+      token: token
+    );
+    
+    return Ticket.fromJson(data);
+  }
+  
+  static Future<Ticket> createTicket(
+    TicketCreateDto dto
+  ) async {
+    final token = await _getToken();
+    final data = await ApiService.post(
+      '/tickets',
+      dto.toJson(),
+      token: token,
+    );
+    
+    return Ticket.fromJson(data);
+  }
+  
+  static Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('auth_token');
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\section{Data Models}
+
+\subsection{Ticket Model}
+
+\begin{lstlisting}[language=Dart]
+class Ticket {
+  final int id;
+  final String title;
+  final String description;
+  final TicketStatus status;
+  final TicketPriority priority;
+  final int departmentId;
+  final String departmentName;
+  final int? categoryId;
+  final String? categoryName;
+  final String creatorId;
+  final String creatorName;
+  final String? assignedToId;
+  final String? assignedToName;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+  
+  Ticket({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.status,
+    required this.priority,
+    required this.departmentId,
+    required this.departmentName,
+    this.categoryId,
+    this.categoryName,
+    required this.creatorId,
+    required this.creatorName,
+    this.assignedToId,
+    this.assignedToName,
+    required this.createdAt,
+    this.updatedAt,
+  });
+  
+  factory Ticket.fromJson(Map<String, dynamic> json) {
+    return Ticket(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      status: TicketStatus.values
+          .firstWhere((e) => e.name == json['status']),
+      priority: TicketPriority.values
+          .firstWhere((e) => e.name == json['priority']),
+      departmentId: json['departmentId'],
+      departmentName: json['departmentName'],
+      categoryId: json['categoryId'],
+      categoryName: json['categoryName'],
+      creatorId: json['creatorId'],
+      creatorName: json['creatorName'],
+      assignedToId: json['assignedToId'],
+      assignedToName: json['assignedToName'],
+      createdAt: DateTime.parse(json['createdAt']),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt']) 
+          : null,
+    );
+  }
+}
+
+enum TicketStatus { open, inProgress, pending, resolved, closed }
+enum TicketPriority { low, medium, high, critical }
+\end{lstlisting}
+
+\newpage
+
+\section{Gerçek Zamanlı İletişim (SignalR)}
+
+\subsection{SignalR Service}
+
+\begin{lstlisting}[language=Dart]
+import 'package:signalr_netcore/signalr_client.dart';
+
+class SignalRService {
+  HubConnection? _hubConnection;
+  
+  Future<void> connect(String token) async {
+    final serverUrl = 'http://localhost:5000/hubs/ticket';
+    
+    _hubConnection = HubConnectionBuilder()
+        .withUrl(
+          serverUrl,
+          options: HttpConnectionOptions(
+            accessTokenFactory: () => Future.value(token),
+          ),
+        )
+        .withAutomaticReconnect()
+        .build();
+    
+    // Event listeners
+    _hubConnection!.on('TicketUpdated', _onTicketUpdated);
+    _hubConnection!.on('CommentAdded', _onCommentAdded);
+    _hubConnection!.on('TicketAssigned', _onTicketAssigned);
+    
+    await _hubConnection!.start();
+  }
+  
+  void _onTicketUpdated(List<Object>? args) {
+    if (args != null && args.isNotEmpty) {
+      final ticketData = args[0] as Map<String, dynamic>;
+      print('Ticket updated: ${ticketData['id']}');
+      // Notify providers to refresh
+    }
+  }
+  
+  void _onCommentAdded(List<Object>? args) {
+    if (args != null && args.isNotEmpty) {
+      final commentData = args[0] as Map<String, dynamic>;
+      print('New comment: ${commentData['content']}');
+      // Show notification
+    }
+  }
+  
+  Future<void> joinTicket(int ticketId) async {
+    await _hubConnection?.invoke('JoinTicket', 
+        args: [ticketId]);
+  }
+  
+  Future<void> leaveTicket(int ticketId) async {
+    await _hubConnection?.invoke('LeaveTicket', 
+        args: [ticketId]);
+  }
+  
+  Future<void> disconnect() async {
+    await _hubConnection?.stop();
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\section{Push Notifications}
+
+\subsection{Notification Service}
+
+\begin{lstlisting}[language=Dart]
+import 'package:flutter_local_notifications/
+    flutter_local_notifications.dart';
+
+class NotificationService {
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  
+  Future<void> initializeLocalNotifications() async {
+    const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    
+    const settings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+    
+    await _notifications.initialize(
+      settings,
+      onDidReceiveNotificationResponse: 
+          _onNotificationTapped,
+    );
+  }
+  
+  Future<void> requestPermissions() async {
+    final plugin = _notifications
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>();
+    
+    await plugin?.requestPermissions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  }
+  
+  Future<void> showNotification(
+    String title,
+    String body,
+    {int? ticketId}
+  ) async {
+    const androidDetails = AndroidNotificationDetails(
+      'tickly_channel',
+      'Tickly Notifications',
+      channelDescription: 'Ticket updates and notifications',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    
+    const iosDetails = DarwinNotificationDetails();
+    
+    const details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+    
+    await _notifications.show(
+      ticketId ?? 0,
+      title,
+      body,
+      details,
+      payload: ticketId?.toString(),
+    );
+  }
+  
+  void _onNotificationTapped(
+      NotificationResponse response) {
+    final payload = response.payload;
+    if (payload != null) {
+      final ticketId = int.parse(payload);
+      // Navigate to ticket detail
+    }
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\section{Kurulum ve Çalıştırma}
+
+\subsection{Geliştirme Ortamı Kurulumu}
+
+\textbf{Gereksinimler:}
+\begin{itemize}
+    \item Flutter SDK 3.16+
+    \item Dart SDK 3.2+
+    \item Xcode 14+ (macOS için)
+    \item CocoaPods (iOS dependencies için)
+    \item iOS Simulator veya fiziksel iPhone
+\end{itemize}
+
+\textbf{Flutter SDK Kurulumu:}
+
+\begin{lstlisting}[language=bash]
+# macOS için Homebrew ile
+brew install flutter
+
+# veya manuel indirme
+# https://docs.flutter.dev/get-started/install/macos
+
+# Flutter doctor ile kontrol
+flutter doctor
+\end{lstlisting}
+
+\subsection{Proje Kurulumu}
+
+\begin{lstlisting}[language=bash]
+# 1. Proje klasorune git
+cd mobile
+
+# 2. Dependencies yukle
+flutter pub get
+
+# 3. iOS dependencies
+cd ios
+pod install
+cd ..
+
+# 4. Cihazlari listele
+flutter devices
+
+# 5. iOS Simulator'da calistir
+flutter run
+
+# 6. Belirli cihazda calistir
+flutter run -d <device-id>
+\end{lstlisting}
+
+\subsection{Build ve Release}
+
+\textbf{Development Build:}
+\begin{lstlisting}[language=bash]
+# Debug mode
+flutter run
+
+# Profile mode (performans analizi icin)
+flutter run --profile
+
+# Release mode
+flutter run --release
+\end{lstlisting}
+
+\textbf{iOS App Store Build:}
+\begin{lstlisting}[language=bash]
+# 1. Build ipa
+flutter build ipa
+
+# 2. Xcode ile ac
+open ios/Runner.xcworkspace
+
+# 3. Xcode'da Archive > Distribute App
+# 4. App Store Connect'e yukle
+\end{lstlisting}
+
+\newpage
+
+\section{Tema ve UI Customization}
+
+\subsection{Theme Provider}
+
+\begin{lstlisting}[language=Dart]
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+  
+  ThemeMode get themeMode => _themeMode;
+  
+  void toggleTheme() {
+    _themeMode = _themeMode == ThemeMode.light 
+        ? ThemeMode.dark 
+        : ThemeMode.light;
+    notifyListeners();
+  }
+  
+  static ThemeData get lightTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.blue,
+        brightness: Brightness.light,
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+  
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.blue,
+        brightness: Brightness.dark,
+      ),
+      appBarTheme: const AppBarTheme(
+        centerTitle: true,
+        elevation: 0,
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+    );
+  }
+}
+\end{lstlisting}
+
+\newpage
+
+\section{Test Stratejisi}
+
+\subsection{Unit Tests}
+
+\begin{lstlisting}[language=Dart]
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  group('TicketProvider Tests', () {
+    test('Initial state should be empty', () {
+      final provider = TicketProvider();
+      expect(provider.tickets, isEmpty);
+      expect(provider.isLoading, false);
+    });
+    
+    test('Fetch tickets should update state', () async {
+      final provider = TicketProvider();
+      await provider.fetchTickets();
+      
+      expect(provider.isLoading, false);
+      expect(provider.tickets, isNotEmpty);
+    });
+  });
+  
+  group('AuthProvider Tests', () {
+    test('Login with valid credentials', () async {
+      final provider = AuthProvider();
+      final success = await provider.login(
+        'test@example.com',
+        'password123'
+      );
+      
+      expect(success, true);
+      expect(provider.isAuthenticated, true);
+      expect(provider.user, isNotNull);
+    });
+  });
+}
+\end{lstlisting}
+
+\subsection{Widget Tests}
+
+\begin{lstlisting}[language=Dart]
+void main() {
+  testWidgets('Login screen has email and password fields',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: LoginScreen())
+    );
+    
+    expect(find.byType(TextField), findsNWidgets(2));
+    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('Password'), findsOneWidget);
+    expect(find.byType(ElevatedButton), findsOneWidget);
+  });
+  
+  testWidgets('Ticket card displays correct information',
+      (WidgetTester tester) async {
+    final ticket = Ticket(
+      id: 1,
+      title: 'Test Ticket',
+      description: 'Test Description',
+      status: TicketStatus.open,
+      priority: TicketPriority.high,
+      // ...
+    );
+    
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: TicketCard(ticket: ticket),
+        ),
+      ),
+    );
+    
+    expect(find.text('Test Ticket'), findsOneWidget);
+    expect(find.text('Test Description'), findsOneWidget);
+  });
+}
+\end{lstlisting}
+
+\newpage
+
+\section{Performans Optimizasyonu}
+
+\subsection{Best Practices}
+
+\begin{enumerate}
+    \item \textbf{Lazy Loading:}
+    \begin{itemize}
+        \item ListView.builder kullanımı
+        \item Infinite scroll pagination
+        \item Image lazy loading
+    \end{itemize}
+    
+    \item \textbf{State Management:}
+    \begin{itemize}
+        \item Provider ile efficient state updates
+        \item notifyListeners() minimal kullanımı
+        \item Selector widget ile specific rebuilds
+    \end{itemize}
+    
+    \item \textbf{API Optimization:}
+    \begin{itemize}
+        \item Request caching
+        \item Debouncing search queries
+        \item Parallel requests where possible
+    \end{itemize}
+    
+    \item \textbf{Image Optimization:}
+    \begin{itemize}
+        \item CachedNetworkImage kullanımı
+        \item Image compression
+        \item Thumbnail preview
+    \end{itemize}
+    
+    \item \textbf{Build Optimization:}
+    \begin{itemize}
+        \item const constructors
+        \item Widget extraction
+        \item RepaintBoundary kullanımı
+    \end{itemize}
+\end{enumerate}
+
+\newpage
+
+\section{Sonuç ve Gelecek Planları}
+
+\subsection{Mevcut Durum}
+
+Tickly Mobile uygulaması, iOS platformu için Flutter kullanılarak başarıyla geliştirilmiştir. Uygulama aşağıdaki temel özellikleri sunar:
+
+\begin{itemize}
+    \item ✓ JWT tabanlı güvenli kimlik doğrulama
+    \item ✓ Ticket oluşturma, listeleme, detay görüntüleme
+    \item ✓ Yorum sistemi
+    \item ✓ Dosya ve fotoğraf yükleme
+    \item ✓ Real-time SignalR entegrasyonu
+    \item ✓ Push notification desteği
+    \item ✓ Dark mode
+    \item ✓ Dashboard ve istatistikler
+\end{itemize}
+
+\subsection{Gelecek Geliştirmeler}
+
+\textbf{Kısa Vadeli (1-2 ay):}
+\begin{itemize}
+    \item Android platform desteği
+    \item Offline-first architecture (local database)
+    \item Biometric authentication (Face ID / Touch ID)
+    \item Rich text editor (yorumlar için)
+    \item File preview in-app
+\end{itemize}
+
+\textbf{Orta Vadeli (2-4 ay):}
+\begin{itemize}
+    \item Voice-to-text ticket oluşturma
+    \item QR code ile ticket açma
+    \item Advanced filtering ve sorting
+    \item Ticket templates
+    \item Export functionality (PDF)
+\end{itemize}
+
+\textbf{Uzun Vadeli (4-6 ay):}
+\begin{itemize}
+    \item iPad optimization (tablet layout)
+    \item Apple Watch companion app
+    \item Siri Shortcuts integration
+    \item AR features (problem visualization)
+    \item ML-based smart suggestions
+\end{itemize}
+
+\subsection{Teknik İyileştirmeler}
+
+\begin{itemize}
+    \item Comprehensive test coverage (\%80+)
+    \item CI/CD pipeline (GitHub Actions + Fastlane)
+    \item Performance monitoring (Firebase Performance)
+    \item Crash reporting (Firebase Crashlytics)
+    \item Analytics integration (Firebase Analytics)
+    \item Code generation (freezed, json\_serializable)
+\end{itemize}
+
+\vspace{1cm}
+
+\begin{center}
+\textit{--- Doküman Sonu ---}
+\end{center}
+
+\end{document}

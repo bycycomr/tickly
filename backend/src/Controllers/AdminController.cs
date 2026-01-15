@@ -179,6 +179,24 @@ namespace Tickly.Api.Controllers
         [AllowAnonymous] // Ticket assignment için tüm kullanıcılar görebilir
         public IActionResult GetDepartmentMembers(int id)
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            
+            // Eğer kullanıcı login olmamışsa veya SuperAdmin değilse, sadece kendi departmanını görebilir
+            if (userId != null)
+            {
+                var isSuperAdmin = _db.RoleAssignments.Any(r => r.UserId == userId && r.Role == RoleName.SuperAdmin);
+                if (!isSuperAdmin)
+                {
+                    var isManagerOfThisDept = _db.RoleAssignments.Any(r => 
+                        r.UserId == userId && 
+                        r.DepartmentId == id && 
+                        (r.Role == RoleName.DepartmentManager || r.Role == RoleName.TeamLead));
+                    
+                    if (!isManagerOfThisDept)
+                        return Forbid();
+                }
+            }
+            
             var members = _db.RoleAssignments.Where(r => r.DepartmentId == id).ToList();
             var users = from m in members
                         join u in _db.Users on m.UserId equals u.Id
@@ -195,9 +213,44 @@ namespace Tickly.Api.Controllers
         [HttpPost("departments/{id}/assign")]
         public IActionResult AssignRole(int id, [FromBody] AssignRoleDto dto)
         {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+            
+            // SuperAdmin kontrolü
+            var isSuperAdmin = _db.RoleAssignments.Any(r => r.UserId == userId && r.Role == RoleName.SuperAdmin);
+            
+            // SuperAdmin değilse, sadece kendi departmanına kullanıcı ekleyebilir
+            if (!isSuperAdmin)
+            {
+                var isManagerOfThisDept = _db.RoleAssignments.Any(r => 
+                    r.UserId == userId && 
+                    r.DepartmentId == id && 
+                    (r.Role == RoleName.DepartmentManager || r.Role == RoleName.TeamLead));
+                
+                if (!isManagerOfThisDept)
+                    return Forbid();
+                
+                // DepartmentManager sadece DepartmentStaff veya TeamLead ekleyebilir, DepartmentManager ekleyemez
+                if (!Enum.TryParse<RoleName>(dto.Role, out var requestedRole)) 
+                    return BadRequest(new { error = "Invalid role" });
+                
+                if (requestedRole == RoleName.SuperAdmin || requestedRole == RoleName.DepartmentManager)
+                    return Forbid();
+            }
+            
             var user = _db.Users.Find(dto.UserId);
             if (user == null) return NotFound(new { error = "User not found" });
             if (!Enum.TryParse<RoleName>(dto.Role, out var role)) return BadRequest(new { error = "Invalid role" });
+            
+            // Aynı departmanda aynı role zaten varsa hata döndür
+            var existingAssignment = _db.RoleAssignments.FirstOrDefault(r => 
+                r.UserId == user.Id && 
+                r.DepartmentId == id && 
+                r.Role == role);
+            
+            if (existingAssignment != null)
+                return BadRequest(new { error = "User already has this role in this department" });
+            
             var ra = new RoleAssignment { UserId = user.Id, DepartmentId = id, Role = role };
             _db.RoleAssignments.Add(ra);
             _db.SaveChanges();
@@ -207,6 +260,24 @@ namespace Tickly.Api.Controllers
         [HttpDelete("departments/{deptId}/users/{userId}")]
         public IActionResult RemoveUserFromDepartment(int deptId, string userId)
         {
+            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (currentUserId == null) return Unauthorized();
+            
+            // SuperAdmin kontrolü
+            var isSuperAdmin = _db.RoleAssignments.Any(r => r.UserId == currentUserId && r.Role == RoleName.SuperAdmin);
+            
+            // SuperAdmin değilse, sadece kendi departmanından kullanıcı çıkarabilir
+            if (!isSuperAdmin)
+            {
+                var isManagerOfThisDept = _db.RoleAssignments.Any(r => 
+                    r.UserId == currentUserId && 
+                    r.DepartmentId == deptId && 
+                    (r.Role == RoleName.DepartmentManager || r.Role == RoleName.TeamLead));
+                
+                if (!isManagerOfThisDept)
+                    return Forbid();
+            }
+            
             var user = _db.Users.Find(userId);
             if (user == null) return NotFound(new { error = "User not found" });
 

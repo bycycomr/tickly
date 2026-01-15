@@ -53,9 +53,13 @@ public class SLAMonitorWorker : BackgroundService
         
         if (violatingTickets.Any())
         {
-            _logger.LogWarning(
-                "Found {Count} tickets with SLA violations",
-                violatingTickets.Count);
+            // Log to console only in development
+            if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+            {
+                _logger.LogInformation(
+                    "Found {Count} tickets with SLA violations",
+                    violatingTickets.Count);
+            }
 
             foreach (var ticket in violatingTickets)
             {
@@ -66,11 +70,15 @@ public class SLAMonitorWorker : BackgroundService
                     
                     await slaService.EscalateTicketAsync(ticket.Id, reason);
                     
-                    _logger.LogInformation(
-                        "Escalated ticket {TicketId} (Tenant: {TenantId}, Title: {Title})",
-                        ticket.Id,
-                        ticket.TenantId,
-                        ticket.Title);
+                    // Only log in development
+                    if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                    {
+                        _logger.LogInformation(
+                            "Escalated ticket {TicketId} (Tenant: {TenantId}, Title: {Title})",
+                            ticket.Id,
+                            ticket.TenantId,
+                            ticket.Title);
+                    }
 
                     // Send real-time notification to assigned user
                     if (!string.IsNullOrEmpty(ticket.AssignedToUserId))

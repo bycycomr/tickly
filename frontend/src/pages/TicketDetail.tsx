@@ -8,12 +8,12 @@ import { Ticket, TicketEvent, SLAPlan } from '../lib/types'
 import { useAuth } from '../context/AuthContext'
 
 const statusMap: Record<number, string> = {
-  0: 'New', 1: 'Assigned', 2: 'In Progress', 3: 'Waiting for Info',
-  4: 'Completed', 5: 'Closed', 6: 'Rejected', 7: 'Duplicate', 8: 'Merged'
+  0: 'Yeni', 1: 'Atandı', 2: 'İşlemde', 3: 'Bilgi Bekleniyor',
+  4: 'Tamamlandı', 5: 'Kapatıldı', 6: 'Reddedildi', 7: 'Tekrar', 8: 'Birleştirildi'
 }
 
 const priorityMap: Record<number, string> = {
-  0: 'Low', 1: 'Normal', 2: 'High', 3: 'Urgent'
+  0: 'Düşük', 1: 'Normal', 2: 'Yüksek', 3: 'Acil'
 }
 
 const statusColors: Record<number, string> = {
@@ -64,7 +64,7 @@ export default function TicketDetail() {
       const t = await api.getTicket(Number(id))
       setTicket(t)
     } catch (e: any) {
-      console.error(e)
+      if (import.meta.env.DEV) console.error('Ticket load error:', e)
       setError(e?.response?.data?.error || 'Talep yüklenemedi')
     } finally {
       setLoading(false)
@@ -77,7 +77,7 @@ export default function TicketDetail() {
       const evts = await api.getTicketEvents(Number(id))
       setEvents(evts)
     } catch (e: any) {
-      console.error('Event yükleme hatası:', e)
+      if (import.meta.env.DEV) console.error('Event load error:', e)
     }
   }
 
@@ -87,7 +87,7 @@ export default function TicketDetail() {
       const members = await api.getDepartmentMembers(ticket.departmentId)
       setStaffMembers(members)
     } catch (e) {
-      console.error('Failed to load staff:', e)
+      if (import.meta.env.DEV) console.error('Failed to load staff:', e)
     }
   }
 
@@ -102,7 +102,7 @@ export default function TicketDetail() {
         if (current) setCurrentSLA(current)
       }
     } catch (e) {
-      console.error('Failed to load SLA plans:', e)
+      if (import.meta.env.DEV) console.error('Failed to load SLA plans:', e)
     }
   }
 
@@ -115,7 +115,7 @@ export default function TicketDetail() {
       await loadTicket()
       await loadSLAPlans()
     } catch (e: any) {
-      console.error(e)
+      if (import.meta.env.DEV) console.error('SLA change error:', e)
       toast.error(e?.response?.data?.error || 'SLA güncellenemedi')
     }
   }
@@ -161,7 +161,7 @@ export default function TicketDetail() {
       setSelectedAssignee('')
       toast.success('Ticket başarıyla atandı')
     } catch (e: any) {
-      console.error(e)
+      if (import.meta.env.DEV) console.error('Assign error:', e)
       toast.error(e?.response?.data?.error || 'Atama başarısız')
     } finally {
       setAssigning(false)
@@ -178,7 +178,7 @@ export default function TicketDetail() {
       await loadEvents()
       toast.success('Yorum başarıyla eklendi')
     } catch (e: any) {
-      console.error(e)
+      if (import.meta.env.DEV) console.error('Add comment error:', e)
       const errorMsg = e?.response?.data?.error || 'Yorum eklenemedi'
       toast.error(errorMsg)
     } finally {
@@ -194,7 +194,7 @@ export default function TicketDetail() {
       await loadEvents()
       toast.success(`Durum ${statusMap[newStatus]} olarak güncellendi`)
     } catch (e: any) {
-      console.error(e)
+      if (import.meta.env.DEV) console.error('Status change error:', e)
       const errorMsg = e?.response?.data?.error || 'Durum güncellenemedi'
       toast.error(errorMsg)
     }
@@ -260,14 +260,14 @@ export default function TicketDetail() {
 
     // Listen for real-time comments
     const handleReceiveComment = (data: any) => {
-      console.log('Real-time comment received:', data)
+      if (import.meta.env.DEV) console.log('Real-time comment received:', data)
       // Reload events to show new comment
       loadEvents()
       toast.success(`Yeni yorum: ${data.username}`)
     }
 
     const handleUserTyping = (data: any) => {
-      console.log(`${data.username} is typing...`)
+      if (import.meta.env.DEV) console.log(`${data.username} is typing...`)
       // You can show a "User is typing..." indicator here
     }
 
@@ -613,7 +613,7 @@ export default function TicketDetail() {
               return (
                 <div 
                   key={event.id} 
-                  className={`border-l-4 pl-4 py-2 ${
+                  className={`border-l-4 pl-4 py-3 rounded-r-md ${
                     isComment ? (isInternal ? 'border-orange-400 bg-orange-50' : 'border-blue-400 bg-blue-50') : 
                     isStatusChange ? 'border-green-400 bg-green-50' : 
                     isAssignment ? 'border-purple-400 bg-purple-50' : 
@@ -622,14 +622,14 @@ export default function TicketDetail() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="text-sm text-gray-600 mb-1">
-                        <span className="font-semibold text-gray-900">{event.actorId}</span>
-                        {isComment && !isInternal && <span className="text-blue-600 ml-2">💬 yorum ekledi</span>}
-                        {isComment && isInternal && <span className="text-orange-600 ml-2">🔒 dahili yorum ekledi</span>}
-                        {isStatusChange && <span className="text-green-600 ml-2">🔄 durumu değiştirdi</span>}
-                        {isAssignment && <span className="text-purple-600 ml-2">👤 atama yaptı</span>}
+                      <div className="flex items-center gap-2 text-sm mb-1">
+                        <span className="font-semibold text-gray-900">{event.actorDisplayName || event.actorId}</span>
+                        {isComment && !isInternal && <span className="text-blue-600">💬 yorum ekledi</span>}
+                        {isComment && isInternal && <span className="text-orange-600">🔒 dahili yorum ekledi</span>}
+                        {isStatusChange && <span className="text-green-600">🔄 durumu değiştirdi</span>}
+                        {isAssignment && <span className="text-purple-600">👤 atama yaptı</span>}
                         {!isComment && !isStatusChange && !isAssignment && (
-                          <span className="text-gray-500 ml-2">• {event.type}</span>
+                          <span className="text-gray-500">• Aktivite</span>
                         )}
                       </div>
                       {(payload.text || payload.message || payload.note || payload.comment) && (
@@ -664,7 +664,8 @@ export default function TicketDetail() {
                         </div>
                       )}
                     </div>
-                    <div className="text-xs text-gray-400 ml-4 whitespace-nowrap">
+                    <div className="text-xs text-gray-500 ml-4 whitespace-nowrap flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
                       {new Date(event.createdAt).toLocaleString('tr-TR', {
                         day: '2-digit',
                         month: '2-digit',

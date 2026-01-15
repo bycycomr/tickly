@@ -43,6 +43,8 @@ namespace Tickly.Api.Data
                 b.Property(t => t.CreatorId).HasMaxLength(50);
                 b.HasIndex(t => new { t.TenantId, t.DepartmentId, t.Status });
                 b.HasIndex(t => new { t.TenantId, t.CreatorId });
+                b.HasIndex(t => t.LastEventAt); // Performance: Event ordering
+                b.HasIndex(t => t.DueAt); // Performance: SLA monitoring
                 b.HasOne<Department>().WithMany().HasForeignKey(t => t.DepartmentId).OnDelete(DeleteBehavior.SetNull);
             });
 
@@ -59,6 +61,7 @@ namespace Tickly.Api.Data
                 b.Property(u => u.DisplayName).HasMaxLength(250);
                 b.Property(u => u.Email).HasMaxLength(250);
                 b.HasIndex(u => new { u.TenantId, u.Email }).IsUnique();
+                b.HasIndex(u => u.Username); // Performance: Username lookup
             });
 
             modelBuilder.Entity<Department>(b =>

@@ -6,8 +6,9 @@ namespace Tickly.Api.Models
     {
         SuperAdmin = 0,
         DepartmentManager = 1,
-        DepartmentStaff = 2,
-        EndUser = 3
+        TeamLead = 2, // Takım Lideri - DepartmentManager ile aynı yetkilere sahip
+        DepartmentStaff = 3,
+        EndUser = 4
     }
 
     public class RoleAssignment
