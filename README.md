@@ -26,7 +26,7 @@
 
 ---
 
-## � Demo Videoları
+## 🎬 Demo Videoları
 
 <table>
 <tr>
