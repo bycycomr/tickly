@@ -324,8 +324,7 @@ tickly/
 
 | Dosya | Açıklama |
 |-------|----------|
-| [`Tickly_Proje_Dokumani.tex`](docs/Tickly_Proje_Dokumani.tex) | Ana LaTeX dökümanı |
-| [`Tickly_Mobile_Dokumani.tex`](docs/Tickly_Mobile_Dokumani.tex) | Mobil uygulama dökümanı |
+| [`Tickly_Proje_Dokumani.pdf`](Tickly_Proje_Dokumani.pdf) | Proje dokümantasyonu (PDF) |
 | [`Video_Senaryo.md`](docs/Video_Senaryo.md) | Demo video senaryosu |
 
 </td>
@@ -341,37 +340,6 @@ tickly/
 </td>
 </tr>
 </table>
-
-### 📝 LaTeX'ten PDF Oluşturma
-
-<details>
-<summary><b>🔽 Overleaf ile (Önerilen)</b></summary>
-
-1. [Overleaf.com](https://www.overleaf.com/) adresine gidin
-2. **New Project** → **Upload Project**
-3. `.tex` dosyasını yükleyin
-4. **Recompile** butonuna basın
-
-</details>
-
-<details>
-<summary><b>🔽 Lokal Ortamda</b></summary>
-
-```powershell
-# Windows (MiKTeX)
-cd docs
-pdflatex Tickly_Proje_Dokumani.tex
-pdflatex Tickly_Proje_Dokumani.tex  # İçindekiler için 2. kez
-```
-
-```bash
-# Linux (TeX Live)
-cd docs
-pdflatex Tickly_Proje_Dokumani.tex
-pdflatex Tickly_Proje_Dokumani.tex
-```
-
-</details>
 
 ---
 
