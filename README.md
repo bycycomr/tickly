@@ -26,7 +26,34 @@
 
 ---
 
-## 🌟 Proje Hakkında
+## � Demo Videoları
+
+<table>
+<tr>
+<td width="50%" align="center">
+
+### 🖥️ Web Uygulaması Demo
+
+[![Web App Demo](https://img.shields.io/badge/YouTube-Web_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=xCsViB2t8aw&t=1068s)
+
+**React & TypeScript ile geliştirilmiş web arayüzü**
+
+</td>
+<td width="50%" align="center">
+
+### 📱 Mobil Uygulama Demo
+
+[![Mobile App Demo](https://img.shields.io/badge/YouTube-Mobile_Demo-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/watch?v=DfSqHaIYX6Y&t=1s)
+
+**Flutter ile geliştirilmiş mobil uygulama**
+
+</td>
+</tr>
+</table>
+
+---
+
+## �🌟 Proje Hakkında
 
 **Tickly**, kurumsal ortamlarda destek taleplerinin etkin bir şekilde yönetilmesi için geliştirilmiş kapsamlı bir help desk sistemidir. Modern web teknolojileri ve mobil platform desteği ile kullanıcılara kesintisiz bir deneyim sunar.
 
