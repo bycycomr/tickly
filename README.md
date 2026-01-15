@@ -247,12 +247,9 @@ flutter run
 
 ## 📱 Mobil Uygulama
 
-<table>
-<tr>
-<td width="60%">
-
 Flutter ile geliştirilmiş cross-platform mobil uygulama:
 
+**Özellikler:**
 - ✅ iOS ve Android desteği
 - ✅ Gerçek zamanlı bildirimler
 - ✅ Offline mod desteği
@@ -260,11 +257,7 @@ Flutter ile geliştirilmiş cross-platform mobil uygulama:
 - ✅ Biyometrik kimlik doğrulama
 - ✅ Push notifications
 
-📖 Detaylı kurulum için: [`mobile/SETUP.md`](mobile/SETUP.md)
-
-</td>
-<td width="40%" align="center">
-
+**Proje Yapısı:**
 ```
 📂 mobile/
 ├── 📁 lib/
@@ -277,9 +270,7 @@ Flutter ile geliştirilmiş cross-platform mobil uygulama:
 └── 📄 pubspec.yaml
 ```
 
-</td>
-</tr>
-</table>
+📖 **Detaylı kurulum için:** [`mobile/SETUP.md`](mobile/SETUP.md)
 
 ---
 
